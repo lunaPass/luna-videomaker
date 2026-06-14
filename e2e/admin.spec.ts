@@ -61,4 +61,27 @@ test.describe('Admin (local mode)', () => {
     await expect(page.getByText('Facebook')).toBeVisible()
   })
 
+  test('cria video via formulario e aparece na lista', async ({ page }) => {
+    await page.goto(`${BASE}/admin/empresas/empresa-1/pessoas/pessoa-1`)
+    await expect(page.getByRole('heading', { name: 'Ana Silva' })).toBeVisible()
+    await expect(page.getByText('Review Novo Smartphone')).toBeVisible()
+
+    // Open create form
+    await page.getByRole('button', { name: '+ Novo Vídeo' }).click()
+    await expect(page.getByRole('heading', { name: 'Novo Vídeo' })).toBeVisible()
+
+    // Fill fields
+    await page.getByPlaceholder('Ex: Aula de inglês #42').fill('Video E2E Teste')
+    await page.locator('select').selectOption('editando')
+    await page.locator('label').filter({ hasText: 'YouTube' }).click()
+    await page.locator('#ads-check').check()
+    await page.getByPlaceholder('Observações opcionais...').fill('Criado no teste')
+
+    // Submit
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    // Wait for form to close and new video to appear
+    await expect(page.getByText('Video E2E Teste')).toBeVisible({ timeout: 10000 })
+  })
+
 })
