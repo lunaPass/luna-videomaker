@@ -6,7 +6,7 @@ test.describe('Admin (local mode)', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('luna_local_auth', JSON.stringify({ email: 'admin@test.com' }))
+      localStorage.setItem('luna_local_auth', JSON.stringify({ email: 'lunaheloisaa82@gmail.com' }))
     })
   })
 
