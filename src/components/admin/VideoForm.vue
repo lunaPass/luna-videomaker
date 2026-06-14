@@ -6,6 +6,7 @@ import * as db from '@/firebase/db'
 
 const props = defineProps<{
   video?: Video | null
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,10 +47,9 @@ function toggleCanal(canal: string) {
   }
 }
 
-async function handleSubmit() {
+function handleSubmit() {
   if (!titulo.value.trim()) return
-  loading.value = true
-  await emit('submit', {
+  emit('submit', {
     titulo: titulo.value.trim(),
     status: status.value,
     dataPostagem: dataPostagem.value,
@@ -57,7 +57,6 @@ async function handleSubmit() {
     ads: ads.value,
     observacoes: observacoes.value,
   })
-  loading.value = false
 }
 </script>
 
@@ -149,10 +148,10 @@ async function handleSubmit() {
           </button>
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="loading || saving"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {{ loading ? 'Salvando...' : 'Salvar' }}
+            {{ loading || saving ? 'Salvando...' : 'Salvar' }}
           </button>
         </div>
       </form>

@@ -22,6 +22,8 @@ const pessoa = ref<Pessoa | null>(null)
 const videos = ref<Video[]>([])
 const showVideoForm = ref(false)
 const editingVideo = ref<Video | null>(null)
+const errorMessage = ref('')
+const salvando = ref(false)
 
 async function carregar() {
   const empresaId = route.params.id as string
@@ -40,20 +42,36 @@ async function carregar() {
 
 async function criarVideo(data: VideoFormData) {
   if (!empresa.value || !pessoa.value) return
-  await db.criarVideo(empresa.value.id, pessoa.value.id, data)
-  showVideoForm.value = false
-  await carregar()
+  errorMessage.value = ''
+  salvando.value = true
+  try {
+    await db.criarVideo(empresa.value.id, pessoa.value.id, data)
+    showVideoForm.value = false
+    await carregar()
+  } catch (e: any) {
+    errorMessage.value = 'Erro ao criar vídeo: ' + (e?.message || 'desconhecido')
+  } finally {
+    salvando.value = false
+  }
 }
 
 async function atualizarVideo(data: VideoFormData) {
   if (!empresa.value || !pessoa.value || !editingVideo.value) return
+  errorMessage.value = ''
+  salvando.value = true
   const oldVideo = editingVideo.value
-  await db.atualizarVideo(empresa.value.id, pessoa.value.id, editingVideo.value.id, data)
-  if (data.status !== oldVideo.status && pessoa.value) {
-    notificarMudancaStatus(pessoa.value.token, data.titulo, oldVideo.status, data.status)
+  try {
+    await db.atualizarVideo(empresa.value.id, pessoa.value.id, editingVideo.value.id, data)
+    if (data.status !== oldVideo.status && pessoa.value) {
+      notificarMudancaStatus(pessoa.value.token, data.titulo, oldVideo.status, data.status)
+    }
+    editingVideo.value = null
+    await carregar()
+  } catch (e: any) {
+    errorMessage.value = 'Erro ao atualizar vídeo: ' + (e?.message || 'desconhecido')
+  } finally {
+    salvando.value = false
   }
-  editingVideo.value = null
-  await carregar()
 }
 
 async function onDrag() {
@@ -115,6 +133,10 @@ onMounted(carregar)
           + Novo Vídeo
         </button>
       </div>
+    </div>
+
+    <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+      {{ errorMessage }}
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border">
@@ -185,11 +207,12 @@ onMounted(carregar)
       </VueDraggable>
     </div>
 
-    <VideoForm v-if="showVideoForm" @submit="criarVideo" @close="showVideoForm = false" />
+    <VideoForm v-if="showVideoForm" :saving="salvando" @submit="criarVideo" @close="showVideoForm = false" />
 
     <VideoForm
       v-if="editingVideo"
       :video="editingVideo"
+      :saving="salvando"
       @submit="atualizarVideo"
       @close="editingVideo = null"
     />
