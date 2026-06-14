@@ -12,7 +12,8 @@ npm run preview   # Vite preview of built output
 ```
 
 ```sh
-npm run test       # npx playwright test (requires dev server running)
+npm run test       # npx playwright test (requires dev server running in test mode)
+npx vite --mode test    # start dev server in test/local mode for tests
 ```
 
 No lint or format commands exist. No pre-commit hooks.
@@ -37,6 +38,8 @@ No lint or format commands exist. No pre-commit hooks.
 | `src/router/index.ts` | All routes + auth guard |
 | `firestore.rules` | Security rules (also deploy separately via Firebase CLI) |
 | `.env` (ignored) | `VITE_FIREBASE_*` vars — copy from `.env.example` |
+| `.env.test` | Overrides `.env` for `vite --mode test` — sets empty API key for local-mode Playwright tests |
+| `e2e/xlsx.spec.ts` | 2 tests: XLSX export content verification + import creates videos |
 
 ## Data model conventions
 
@@ -50,6 +53,7 @@ No lint or format commands exist. No pre-commit hooks.
 - `useAuth` composable relies on `onMounted` for the auth listener — only works inside components, not in route guards. The router guard in `src/router/index.ts` imports `auth` directly from `firebase/init.ts` instead.
 - `getPessoaByToken` scans ALL empresas linearly — no Firestore index needed but O(n) reads.
 - XLSX composable uses `readAsBinaryString` (deprecated in some browsers — FileReader API).
+- `import('exceljs')` dynamically loaded in XlsxExportButton / XlsxImportButton — keeps bundle small.
 
 ## Local development mode (no Firebase)
 
