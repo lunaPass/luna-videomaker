@@ -58,9 +58,17 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
   const user = auth.currentUser
+
+  if (user && user.email && user.email !== 'lunaheloisaa82@gmail.com') {
+    if (typeof auth.signOut === 'function') {
+      await auth.signOut()
+    }
+    next('/login')
+    return
+  }
 
   if (requiresAuth && !user) {
     next('/login')

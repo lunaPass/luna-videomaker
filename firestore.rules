@@ -6,8 +6,9 @@ service cloud.firestore {
     // ===============================================================
     // Helper Functions
     // ===============================================================
-    function isAuthenticated() {
-      return request.auth != null;
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'lunaheloisaa82@gmail.com';
     }
 
     function isValidString(value, minLen, maxLen) {
@@ -17,14 +18,14 @@ service cloud.firestore {
     function isValidCanais(array) {
       return array is list && array.size() <= 20 &&
         array.size() >= 0 &&
-        array.all(c => c is string && c.size() > 0 && c.size() <= 30);
+        array.all(c, c is string && c.size() > 0 && c.size() <= 30);
     }
 
     // ===============================================================
     // Config (admin only)
     // ===============================================================
     match /config/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAdmin();
     }
 
     // ===============================================================
@@ -32,57 +33,57 @@ service cloud.firestore {
     // ===============================================================
     match /empresas/{empresaId} {
       // Admin: full access
-      allow read, write: if isAuthenticated();
+      allow read: if isAdmin();
 
       // Contractant: read by token via query
       allow read: if request.query.token == resource.data.token;
 
       // Validate empresa creation
-      allow create: if isAuthenticated()
+      allow create: if isAdmin()
         && request.resource.data.keys().hasAll(['nome', 'slug', 'token', 'criadoEm'])
         && isValidString(request.resource.data.nome, 1, 100)
         && isValidString(request.resource.data.slug, 1, 100)
         && isValidString(request.resource.data.token, 32, 32)
         && request.resource.data.criadoEm is timestamp;
 
-      allow update: if isAuthenticated()
+      allow update: if isAdmin()
         && request.resource.data.nome is string
         && request.resource.data.nome.size() <= 100;
 
-      allow delete: if isAuthenticated();
+      allow delete: if isAdmin();
 
       // ===============================================================
       // Pessoas (subcollection)
       // ===============================================================
       match /pessoas/{pessoaId} {
-        allow read: if isAuthenticated();
+        allow read: if isAdmin();
         allow read: if request.query.token == resource.data.token;
 
-        allow create: if isAuthenticated()
+        allow create: if isAdmin()
           && request.resource.data.keys().hasAll(['nome', 'token', 'ordem', 'criadoEm'])
           && isValidString(request.resource.data.nome, 1, 100)
           && isValidString(request.resource.data.token, 32, 32)
           && request.resource.data.ordem is number
           && request.resource.data.criadoEm is timestamp;
 
-        allow update: if isAuthenticated()
+        allow update: if isAdmin()
           && request.resource.data.nome is string
           && request.resource.data.nome.size() <= 100;
 
-        allow delete: if isAuthenticated();
+        allow delete: if isAdmin();
 
         // ===============================================================
         // Videos (subcollection)
         // ===============================================================
         match /videos/{videoId} {
-          allow read: if isAuthenticated();
+          allow read: if isAdmin();
 
           // Contractant: read videos via pessoa token
           allow read: if get(
             /databases/$(database)/documents/empresas/$(empresaId)/pessoas/$(pessoaId)
           ).data.token == request.query.token;
 
-          allow create: if isAuthenticated()
+          allow create: if isAdmin()
             && request.resource.data.keys().hasAll(['titulo', 'status', 'ordem', 'criadoEm'])
             && isValidString(request.resource.data.titulo, 1, 200)
             && request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado']
@@ -93,8 +94,15 @@ service cloud.firestore {
             && request.resource.data.observacoes.size() <= 2000
             && request.resource.data.criadoEm is timestamp;
 
-          allow update: if isAuthenticated();
-          allow delete: if isAuthenticated();
+          allow update: if isAdmin()
+            && request.resource.data.titulo is string
+            && request.resource.data.titulo.size() <= 200
+            && request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado']
+            && request.resource.data.ordem is number
+            && request.resource.data.ads is bool
+            && request.resource.data.observacoes is string
+            && request.resource.data.observacoes.size() <= 2000;
+          allow delete: if isAdmin();
         }
       }
     }

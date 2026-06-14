@@ -16,7 +16,7 @@ async function handleSubmit() {
     await login(email.value, password.value)
     router.push('/admin/dashboard')
   } catch (e: any) {
-    error.value = e.message || 'Erro ao fazer login'
+    error.value = 'Email ou senha inválidos'
   } finally {
     loading.value = false
   }
