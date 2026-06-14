@@ -8,7 +8,8 @@ Vue 3 SPA (not Nuxt) — Firebase stack for video production tracking. All UI in
 npm run dev       # Vite dev server
 npm run build     # vue-tsc typecheck + vite build (run both before committing)
 npm run preview   # Vite preview of built output
-./deploy.sh       # build + gh-pages deploy (requires GitHub auth)
+./deploy.sh             # build + gh-pages deploy (requires GitHub auth)
+./deploy-firestore.sh   # deploy firestore.rules via Firebase CLI
 ```
 
 ```sh
