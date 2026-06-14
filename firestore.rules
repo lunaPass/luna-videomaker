@@ -16,9 +16,7 @@ service cloud.firestore {
     }
 
     function isValidCanais(array) {
-      return array is list && array.size() <= 20 &&
-        array.size() >= 0 &&
-        array.all(c, c is string && c.size() > 0 && c.size() <= 30);
+      return array is list && array.size() <= 20;
     }
 
     // ===============================================================
