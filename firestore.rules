@@ -8,7 +8,8 @@ service cloud.firestore {
     // ===============================================================
     function isAdmin() {
       return request.auth != null &&
-        request.auth.token.email == 'lunaheloisaa82@gmail.com';
+        request.auth.token.email == 'lunaheloisaa82@gmail.com' &&
+        request.auth.token.email_verified == true;
     }
 
     function isValidString(value, minLen, maxLen) {
@@ -40,15 +41,15 @@ service cloud.firestore {
 
       // Validate empresa creation
       allow create: if isAdmin()
-        && request.resource.data.keys().hasAll(['nome', 'slug', 'token', 'criadoEm'])
+        && request.resource.data.keys().hasOnly(['nome', 'slug', 'token', 'criadoEm'])
         && isValidString(request.resource.data.nome, 1, 100)
         && isValidString(request.resource.data.slug, 1, 100)
         && isValidString(request.resource.data.token, 32, 32)
         && request.resource.data.criadoEm is timestamp;
 
       allow update: if isAdmin()
-        && request.resource.data.nome is string
-        && request.resource.data.nome.size() <= 100;
+        && request.resource.data.keys().hasOnly(['nome'])
+        && isValidString(request.resource.data.nome, 1, 100);
 
       allow delete: if isAdmin();
 
@@ -60,15 +61,15 @@ service cloud.firestore {
         allow read: if request.query.token == resource.data.token;
 
         allow create: if isAdmin()
-          && request.resource.data.keys().hasAll(['nome', 'token', 'ordem', 'criadoEm'])
+          && request.resource.data.keys().hasOnly(['nome', 'token', 'ordem', 'criadoEm'])
           && isValidString(request.resource.data.nome, 1, 100)
           && isValidString(request.resource.data.token, 32, 32)
           && request.resource.data.ordem is number
           && request.resource.data.criadoEm is timestamp;
 
         allow update: if isAdmin()
-          && request.resource.data.nome is string
-          && request.resource.data.nome.size() <= 100;
+          && request.resource.data.keys().hasOnly(['nome'])
+          && isValidString(request.resource.data.nome, 1, 100);
 
         allow delete: if isAdmin();
 
@@ -84,7 +85,7 @@ service cloud.firestore {
           ).data.token == request.query.token;
 
           allow create: if isAdmin()
-            && request.resource.data.keys().hasAll(['titulo', 'status', 'ordem', 'criadoEm'])
+            && request.resource.data.keys().hasOnly(['titulo', 'status', 'ordem', 'criadoEm', 'dataPostagem', 'canais', 'ads', 'observacoes'])
             && isValidString(request.resource.data.titulo, 1, 200)
             && request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado']
             && request.resource.data.ordem is number
@@ -92,16 +93,18 @@ service cloud.firestore {
             && request.resource.data.ads is bool
             && request.resource.data.observacoes is string
             && request.resource.data.observacoes.size() <= 2000
+            && (request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
             && request.resource.data.criadoEm is timestamp;
 
           allow update: if isAdmin()
-            && request.resource.data.titulo is string
-            && request.resource.data.titulo.size() <= 200
-            && request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado']
-            && request.resource.data.ordem is number
-            && request.resource.data.ads is bool
-            && request.resource.data.observacoes is string
-            && request.resource.data.observacoes.size() <= 2000;
+            && request.resource.data.keys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem'])
+            && (!request.resource.data.keys().hasAny(['titulo']) || isValidString(request.resource.data.titulo, 1, 200))
+            && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado'])
+            && (!request.resource.data.keys().hasAny(['canais']) || isValidCanais(request.resource.data.canais))
+            && (!request.resource.data.keys().hasAny(['ads']) || request.resource.data.ads is bool)
+            && (!request.resource.data.keys().hasAny(['observacoes']) || (request.resource.data.observacoes is string && request.resource.data.observacoes.size() <= 2000))
+            && (!request.resource.data.keys().hasAny(['dataPostagem']) || request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
+            && (!request.resource.data.keys().hasAny(['ordem']) || request.resource.data.ordem is number);
           allow delete: if isAdmin();
         }
       }
