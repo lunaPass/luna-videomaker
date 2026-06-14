@@ -9,13 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "exceljs": "^4.4.0",
     "firebase": "^10.12",
     "nanoid": "^5.0",
     "pinia": "^2.1",
     "vue": "^3.4",
     "vue-draggable-plus": "^0.5",
-    "vue-router": "^4.3",
-    "xlsx": "^0.18"
+    "vue-router": "^4.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0-alpha-2026-06-13",

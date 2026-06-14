@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import * as XLSX from 'xlsx'
 
 const emit = defineEmits<{
   imported: [dados: any[]]
@@ -8,27 +7,45 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 
-function handleFileUpload(event: Event) {
+async function handleFileUpload(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
 
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Arquivo muito grande. Tamanho máximo: 10MB')
+    return
+  }
+
   loading.value = true
-  const reader = new FileReader()
+  try {
+    const Excel = await import('exceljs').then(m => m.default)
+    const buffer = await file.arrayBuffer()
+    const workbook = new Excel.Workbook()
+    await workbook.xlsx.load(buffer)
+    const ws = workbook.getWorksheet(1)
+    if (!ws) return
 
-  reader.onload = (e) => {
-    const data = e.target?.result as ArrayBuffer
-    const wb = XLSX.read(data, { type: 'array' })
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const json = XLSX.utils.sheet_to_json(ws)
+    const json: any[] = []
+    let headers: string[] = []
+
+    ws.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      const values = (row.values as any[]).slice(1)
+      if (rowNumber === 1) {
+        headers = values.map(v => String(v ?? ''))
+      } else {
+        const obj: any = {}
+        headers.forEach((h, i) => { obj[h] = values[i] })
+        json.push(obj)
+      }
+    })
+
     emit('imported', json)
+  } catch {
+    alert('Erro ao ler arquivo. Verifique se é um XLSX válido.')
+  } finally {
     loading.value = false
   }
 
-  reader.onerror = () => {
-    loading.value = false
-  }
-
-  reader.readAsArrayBuffer(file)
   ;(event.target as HTMLInputElement).value = ''
 }
 </script>
