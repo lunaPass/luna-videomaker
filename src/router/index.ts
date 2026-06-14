@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { auth } from '@/firebase/init'
+import { auth, isLocalMode } from '@/firebase/init'
 
 const router = createRouter({
   history: createWebHistory('/luna-videomaker/'),
@@ -60,6 +60,12 @@ const router = createRouter({
 
 router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
+
+  // Wait for Firebase Auth to restore session from IndexedDB
+  if (!isLocalMode && typeof auth.authStateReady === 'function') {
+    await auth.authStateReady()
+  }
+
   const user = auth.currentUser
 
   if (user && user.email && user.email !== 'lunaheloisaa82@gmail.com') {
