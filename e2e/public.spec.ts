@@ -16,12 +16,16 @@ const TOKENS = {
 
 test.describe('Páginas públicas', () => {
 
-  test('carrega lista de pessoas da empresa com token válido', async ({ page }) => {
+  test('carrega dashboard e videos da empresa com token válido', async ({ page }) => {
     await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
     await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Ana Silva' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Carlos Oliveira' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Beatriz Costa' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Gravado/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Editando/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Revis/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Postado/ }).first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Review Novo Smartphone' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Setup Gamer 2025' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Unboxing Câmera Sony' })).toBeVisible()
   })
 
   test('carrega vídeos de uma pessoa com token pessoal', async ({ page }) => {
@@ -50,8 +54,9 @@ test.describe('Páginas públicas', () => {
   test('nova empresa Studio Zen funciona', async ({ page }) => {
     await page.goto(`${BASE}/v/studio-zen?token=${TOKENS.empresa['studio-zen']}`)
     await expect(page.getByRole('heading', { name: 'Studio Zen' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Julia Lima' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Rafael Torres' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Gravado/ }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: /Postado/ }).first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Meditação Guiada' })).toBeVisible()
   })
 
 })

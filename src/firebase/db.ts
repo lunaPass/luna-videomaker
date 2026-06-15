@@ -550,6 +550,55 @@ export async function listarTodosVideos(): Promise<Video[]> {
   return todos
 }
 
+export async function listarVideosPorEmpresa(empresaId: string): Promise<(Video & { pessoaNome: string })[]> {
+  if (isLocalMode) {
+    const pessoas = getLocalPessoas(empresaId)
+    const todos: (Video & { pessoaNome: string })[] = []
+    for (const pessoa of pessoas) {
+      const videos = getLocalVideos(empresaId, pessoa.id)
+      for (const v of videos) {
+        todos.push({
+          ...v,
+          dataPostagem: v.dataPostagem ? new Date(v.dataPostagem) : null,
+          criadoEm: new Date(v.criadoEm),
+          pessoaNome: pessoa.nome,
+        })
+      }
+    }
+    return todos.sort((a, b) => a.ordem - b.ordem)
+  }
+  const pessoasSnap = await getDocs(
+    query(collection(db!, 'empresas', empresaId, 'pessoas'), orderBy('ordem', 'asc'))
+  )
+  const promises = pessoasSnap.docs.map(async (pessoaDoc) => {
+    const videosSnap = await getDocs(
+      query(
+        collection(db!, 'empresas', empresaId, 'pessoas', pessoaDoc.id, 'videos'),
+        orderBy('ordem', 'asc')
+      )
+    )
+    return videosSnap.docs.map((videoDoc) => {
+      const data = videoDoc.data()
+      return {
+        id: videoDoc.id,
+        empresaId,
+        pessoaId: pessoaDoc.id,
+        pessoaNome: pessoaDoc.data().nome,
+        titulo: data.titulo,
+        status: data.status as VideoStatus,
+        ordem: data.ordem,
+        dataPostagem: data.dataPostagem?.toDate() ?? null,
+        canais: data.canais ?? [],
+        ads: data.ads ?? false,
+        observacoes: data.observacoes ?? '',
+        criadoEm: data.criadoEm?.toDate() ?? new Date(),
+      } as Video & { pessoaNome: string }
+    })
+  })
+  const nested = await Promise.all(promises)
+  return nested.flat()
+}
+
 // ─── Config ─────────────────────────────────────────────
 
 const CONFIG_DOC = 'global'
