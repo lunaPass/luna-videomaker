@@ -16,4 +16,5 @@ export interface NotificacaoAdmin {
   pessoaId: string
   timestamp: number
   lida: boolean
+  _token?: string
 }

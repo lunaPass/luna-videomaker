@@ -7,8 +7,9 @@ service cloud.firestore {
     // Helper Functions
     // ===============================================================
     function isAdmin() {
-      return request.auth != null &&
-        request.auth.token.email == 'lunaheloisaa82@gmail.com';
+      return request.auth != null
+        && request.auth.token.email == 'lunaheloisaa82@gmail.com'
+        && request.auth.token.email_verified == true;
     }
 
     function isValidString(value, minLen, maxLen) {
@@ -17,6 +18,10 @@ service cloud.firestore {
 
     function isValidCanais(array) {
       return array is list && array.size() <= 20;
+    }
+
+    function empresaToken(empresaId) {
+      return get(/databases/$(database)/documents/empresas/$(empresaId)).data.token;
     }
 
     // ===============================================================
@@ -30,10 +35,8 @@ service cloud.firestore {
     // Empresas
     // ===============================================================
     match /empresas/{empresaId} {
-      // Public read (token-based filtering no frontend)
       allow read: if true;
 
-      // Validate empresa creation
       allow create: if isAdmin()
         && request.resource.data.keys().hasOnly(['nome', 'slug', 'token', 'criadoEm', 'locale'])
         && isValidString(request.resource.data.nome, 1, 100)
@@ -79,13 +82,12 @@ service cloud.firestore {
             && request.resource.data.ordem is number
             && isValidCanais(request.resource.data.canais)
             && request.resource.data.ads is bool
-            && request.resource.data.observacoes is string
-            && request.resource.data.observacoes.size() <= 2000
+            && isValidString(request.resource.data.observacoes, 0, 2000)
             && (request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
             && request.resource.data.criadoEm is timestamp
             && request.resource.data.priorizado is bool
-            && request.resource.data.linkMaterialBruto is string
-            && request.resource.data.linkVideoFinal is string;
+            && isValidString(request.resource.data.linkMaterialBruto, 0, 2048)
+            && isValidString(request.resource.data.linkVideoFinal, 0, 2048);
 
           allow update: if (isAdmin()
             && request.resource.data.keys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem', 'priorizado', 'linkMaterialBruto', 'linkVideoFinal', 'atualizadoEm', 'valor', 'moeda'])
@@ -94,22 +96,23 @@ service cloud.firestore {
             && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado'])
             && (!request.resource.data.keys().hasAny(['canais']) || isValidCanais(request.resource.data.canais))
             && (!request.resource.data.keys().hasAny(['ads']) || request.resource.data.ads is bool)
-            && (!request.resource.data.keys().hasAny(['observacoes']) || (request.resource.data.observacoes is string && request.resource.data.observacoes.size() <= 2000))
+            && (!request.resource.data.keys().hasAny(['observacoes']) || isValidString(request.resource.data.observacoes, 0, 2000))
             && (!request.resource.data.keys().hasAny(['dataPostagem']) || request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
             && (!request.resource.data.keys().hasAny(['ordem']) || request.resource.data.ordem is number)
             && (!request.resource.data.keys().hasAny(['priorizado']) || request.resource.data.priorizado is bool)
-            && (!request.resource.data.keys().hasAny(['linkMaterialBruto']) || request.resource.data.linkMaterialBruto is string)
-            && (!request.resource.data.keys().hasAny(['linkVideoFinal']) || request.resource.data.linkVideoFinal is string))
+            && (!request.resource.data.keys().hasAny(['linkMaterialBruto']) || isValidString(request.resource.data.linkMaterialBruto, 0, 2048))
+            && (!request.resource.data.keys().hasAny(['linkVideoFinal']) || isValidString(request.resource.data.linkVideoFinal, 0, 2048)))
           ||
-          // Public: any visitor with the token can toggle priorizado and set linkMaterialBruto
+          // Public: visitor with valid empresa token can toggle priorizado and set linkMaterialBruto
           (request.resource.data.keys().hasOnly(['priorizado', 'linkMaterialBruto'])
             && request.resource.data.priorizado is bool
-            && request.resource.data.linkMaterialBruto is string);
+            && isValidString(request.resource.data.linkMaterialBruto, 0, 2048)
+            && empresaToken(empresaId) == request.resource.data._token);
           allow delete: if isAdmin();
         }
 
         // ===============================================================
-        // Notificacoes da pessoa (cliente) — lidas via token, sem auth
+        // Notificacoes da pessoa (cliente) — admin cria, contratante lê
         // ===============================================================
         match /notificacoes/{notificacaoId} {
           allow read, delete: if true;
@@ -118,10 +121,20 @@ service cloud.firestore {
       }
 
       // ===============================================================
-      // NotificacoesAdmin (editor recebe do cliente) — admin only
+      // NotificacoesAdmin (contratante → admin) — token validated
       // ===============================================================
       match /notificacoesAdmin/{notificacaoId} {
-        allow read, create, update: if isAdmin();
+        allow read, update: if isAdmin();
+        allow create: if isAdmin() || (
+          request.resource.data.keys().hasOnly(['tipo', 'videoId', 'videoTitulo', 'pessoaNome', 'empresaNome', 'empresaId', 'pessoaId', 'timestamp', 'lida', '_token'])
+          && request.resource.data.tipo in ['priorizado', 'despriorizado', 'linkBruto']
+          && isValidString(request.resource.data.videoTitulo, 1, 200)
+          && isValidString(request.resource.data.pessoaNome, 1, 100)
+          && isValidString(request.resource.data.empresaNome, 1, 100)
+          && request.resource.data.timestamp is number
+          && request.resource.data.lida == false
+          && empresaToken(request.resource.data.empresaId) == request.resource.data._token
+        );
         allow delete: if isAdmin();
       }
     }

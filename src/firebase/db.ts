@@ -244,11 +244,13 @@ export async function atualizarVideoPublic(
   empresaId: string,
   pessoaId: string,
   videoId: string,
-  data: { priorizado?: boolean; linkMaterialBruto?: string }
+  data: { priorizado?: boolean; linkMaterialBruto?: string },
+  token?: string
 ) {
   const updatePayload: Record<string, any> = {}
   if (data.priorizado !== undefined) updatePayload.priorizado = data.priorizado
   if (data.linkMaterialBruto !== undefined) updatePayload.linkMaterialBruto = data.linkMaterialBruto
+  if (token) updatePayload._token = token
   await updateDoc(
     doc(db!, 'empresas', empresaId, 'pessoas', pessoaId, 'videos', videoId),
     updatePayload

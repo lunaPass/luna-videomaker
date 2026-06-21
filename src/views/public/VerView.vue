@@ -161,7 +161,7 @@ async function togglePriorizado(video: Video & { pessoaNome: string }) {
   video.priorizado = novo
   const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
-  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { priorizado: novo })
+  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { priorizado: novo }, getToken())
   await db.criarNotificacaoAdmin(empresaId, {
     tipo: novo ? 'priorizado' : 'despriorizado',
     videoId: video.id,
@@ -170,6 +170,7 @@ async function togglePriorizado(video: Video & { pessoaNome: string }) {
     empresaNome: empresa.value?.nome || '',
     empresaId,
     pessoaId: video.pessoaId,
+    _token: getToken(),
   })
 }
 
@@ -186,7 +187,7 @@ async function salvarLinkMaterialBruto(video: Video & { pessoaNome: string }, li
   editandoLink.value[video.id] = false
   const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
-  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { linkMaterialBruto: link })
+  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { linkMaterialBruto: link }, getToken())
   await db.criarNotificacaoAdmin(empresaId, {
     tipo: 'linkBruto',
     videoId: video.id,
@@ -195,6 +196,7 @@ async function salvarLinkMaterialBruto(video: Video & { pessoaNome: string }, li
     empresaNome: empresa.value?.nome || '',
     empresaId,
     pessoaId: video.pessoaId,
+    _token: getToken(),
   })
 }
 
