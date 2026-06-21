@@ -8,7 +8,8 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "./scripts/run-e2e.sh",
-    "test:e2e:ui": "./scripts/run-e2e-ui.sh"
+    "test:e2e:ui": "./scripts/run-e2e-ui.sh",
+    "prepare": "husky"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
@@ -27,6 +28,7 @@
     "@vitejs/plugin-vue": "^5.0",
     "autoprefixer": "^10.4",
     "firebase-admin": "^14.0.0",
+    "husky": "^9.1.7",
     "postcss": "^8.4",
     "tailwindcss": "^3.4",
     "typescript": "^5.4",
