@@ -1,28 +1,7 @@
 {
   "firestore": {
     "rules": "firestore.rules",
-    "indexes": [
-      {
-        "collectionGroup": "notificacoesAdmin",
-        "queryScope": "COLLECTION_GROUP",
-        "fields": [
-          { "fieldPath": "__name__", "order": "ASCENDING" }
-        ]
-      },
-      {
-        "collection": "notificacoesAdmin",
-        "fields": [
-          { "fieldPath": "lida", "order": "ASCENDING" }
-        ]
-      },
-      {
-        "collection": "notificacoesAdmin",
-        "fields": [
-          { "fieldPath": "lida", "order": "ASCENDING" },
-          { "fieldPath": "timestamp", "order": "ASCENDING" }
-        ]
-      }
-    ]
+    "indexes": "firestore.indexes.json"
   },
   "emulators": {
     "singleProjectMode": false,
