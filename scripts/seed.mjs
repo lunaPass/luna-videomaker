@@ -1,3 +1,8 @@
+import admin from 'firebase-admin'
+import { getAuth } from 'firebase-admin/auth'
+
+const adminAuth = getAuth(admin.initializeApp({ projectId: 'test' }))
+
 const AUTH_URL = 'http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1'
 const FS_URL = 'http://127.0.0.1:8080/v1/projects/test/databases/(default)/documents'
 
@@ -176,14 +181,26 @@ async function limparTudo(token) {
 }
 
 async function criarUsuario() {
-  const res = await fetch(`${AUTH_URL}/accounts:signUp?key=test`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'lunaheloisaa82@gmail.com', password: 'admin123', returnSecureToken: true }),
-  })
-  const data = await res.json()
-  if (data.error && data.error.message !== 'EMAIL_EXISTS') {
-    console.error('Erro ao criar usuário:', data.error.message)
+  try {
+    await adminAuth.createUser({
+      uid: 'admin-test',
+      email: 'lunaheloisaa82@gmail.com',
+      password: 'admin123',
+      emailVerified: true,
+    })
+    console.log('Usuário criado com email_verified=true')
+  } catch (e) {
+    if (e.code === 'auth/email-already-exists') {
+      const user = await adminAuth.getUserByEmail('lunaheloisaa82@gmail.com')
+      if (!user.emailVerified) {
+        await adminAuth.updateUser(user.uid, { emailVerified: true })
+        console.log('email_verified atualizado')
+      } else {
+        console.log('Usuário já verificado')
+      }
+    } else {
+      console.error('Erro ao criar usuário:', e.message)
+    }
   }
 }
 
