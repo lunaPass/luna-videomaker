@@ -175,7 +175,23 @@ async function limparTudo(token) {
   }
 }
 
+async function criarUsuario() {
+  const res = await fetch(`${AUTH_URL}/accounts:signUp?key=test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'lunaheloisaa82@gmail.com', password: 'admin123', returnSecureToken: true }),
+  })
+  const data = await res.json()
+  if (data.error && data.error.message !== 'EMAIL_EXISTS') {
+    console.error('Erro ao criar usuário:', data.error.message)
+  }
+}
+
 async function seed() {
+  // Create user first so getToken() works even on fresh emulator
+  console.log('Criando usuário de teste...')
+  await criarUsuario()
+
   const token = await getToken()
   console.log('Token obtido.')
 
