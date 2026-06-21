@@ -13,4 +13,19 @@ export default defineConfig(({ mode }) => ({
   server: {
     hmr: mode === 'development',
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/vue') && !id.includes('vue-chartjs')) {
+            return 'vendor-vue'
+          }
+          if (id.includes('node_modules/firebase')) {
+            return 'vendor-firebase'
+          }
+        },
+      },
+    },
+  },
 }))

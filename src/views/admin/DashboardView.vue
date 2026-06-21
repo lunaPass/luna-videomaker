@@ -1,25 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import * as db from '@/firebase/db'
 import { VIDEO_STATUS_ORDER, type VideoStatus } from '@/types/video'
 import type { Video, Moeda } from '@/types/video'
 import type { Empresa } from '@/types/empresa'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js'
-import { Bar, Doughnut } from 'vue-chartjs'
+import { useCharts } from '@/composables/useCharts'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
-
+const BarComp = shallowRef<any>()
+const DoughnutComp = shallowRef<any>()
 const router = useRouter()
 const { t, locale } = useI18n()
 
@@ -49,7 +39,6 @@ const statusCards = computed(() => {
 const totalVideos = computed(() => videosFiltrados.value.length)
 const priorizadosCount = computed(() => videosFiltrados.value.filter((v) => v.priorizado).length)
 const adsCount = computed(() => videosFiltrados.value.filter((v) => v.ads).length)
-const nonAdsCount = computed(() => totalVideos.value - adsCount.value)
 
 const canaisData = computed(() => {
   const buckets: Record<string, number> = {}
@@ -234,7 +223,14 @@ const receitaEmpresaOptions = {
 const temReceita = computed(() => receitaEmpresaData.value.labels.length > 0)
 
 onMounted(async () => {
-  const [videos, emp, config] = await Promise.all([db.listarTodosVideos(), db.listarEmpresas(), db.getConfig()])
+  const [videos, emp, config, { Bar, Doughnut }] = await Promise.all([
+    db.listarTodosVideos(),
+    db.listarEmpresas(),
+    db.getConfig(),
+    useCharts(),
+  ])
+  BarComp.value = Bar
+  DoughnutComp.value = Doughnut
   allVideos.value = videos
   empresas.value = emp
   usdToBrl.value = config.usdToBrl
@@ -264,8 +260,8 @@ function formatDateTime(d: Date): string {
   <div v-if="loading" class="animate-pulse space-y-6">
     <div class="h-8 w-48 skeleton-pulse mb-6" />
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-      <div v-for="i in 10" :key="i" class="h-24 skeleton-pulse" />
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div v-for="i in 8" :key="i" class="h-24 skeleton-pulse" />
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -296,7 +292,7 @@ function formatDateTime(d: Date): string {
     </div>
 
     <!-- Status + Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <div
         v-for="card in statusCards"
         :key="card.status"
@@ -319,10 +315,6 @@ function formatDateTime(d: Date): string {
         <p class="text-3xl font-bold">{{ adsCount }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.comAds') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-gray-50 text-gray-800">
-        <p class="text-3xl font-bold">{{ nonAdsCount }}</p>
-        <p class="text-sm font-medium mt-1">{{ t('dashboard.semAds') }}</p>
-      </div>
       <div class="rounded-xl p-5 bg-indigo-50 text-indigo-800">
         <p class="text-3xl font-bold">{{ empresas.length }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.empresas') }}</p>
@@ -333,15 +325,15 @@ function formatDateTime(d: Date): string {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div class="bg-white rounded-xl shadow-sm border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.pipelineProducao') }}</h2>
-        <div class="h-64" v-if="totalVideos > 0">
-          <Bar :data="pipelineChartData" :options="pipelineChartOptions" />
+        <div class="h-64" v-if="totalVideos > 0 && BarComp">
+          <component :is="BarComp" :data="pipelineChartData" :options="pipelineChartOptions" />
         </div>
         <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumVideo') }}</p>
       </div>
       <div class="bg-white rounded-xl shadow-sm border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.volumeMensal') }}</h2>
-        <div class="h-64" v-if="totalVideos > 0">
-          <Bar :data="volumeMensalData" :options="volumeMensalOptions" />
+        <div class="h-64" v-if="totalVideos > 0 && BarComp">
+          <component :is="BarComp" :data="volumeMensalData" :options="volumeMensalOptions" />
         </div>
         <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumVideo') }}</p>
       </div>
@@ -350,9 +342,9 @@ function formatDateTime(d: Date): string {
     <!-- Canal Distribution -->
     <div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
       <h2 class="text-lg font-bold mb-4">{{ t('dashboard.videosPorCanal') }}</h2>
-      <div class="h-72 flex items-center justify-center" v-if="canaisData.length > 0">
+      <div class="h-72 flex items-center justify-center" v-if="canaisData.length > 0 && DoughnutComp">
         <div class="w-72">
-          <Doughnut :data="canalChartData" :options="canalChartOptions" />
+          <component :is="DoughnutComp" :data="canalChartData" :options="canalChartOptions" />
         </div>
       </div>
       <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumCanal') }}</p>
@@ -361,8 +353,8 @@ function formatDateTime(d: Date): string {
     <!-- Receita por Empresa -->
     <div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
       <h2 class="text-lg font-bold mb-4">{{ t('dashboard.receitaEmpresa') }}</h2>
-      <div class="h-64" v-if="temReceita">
-        <Bar :data="receitaEmpresaData" :options="receitaEmpresaOptions" />
+      <div class="h-64" v-if="temReceita && BarComp">
+        <component :is="BarComp" :data="receitaEmpresaData" :options="receitaEmpresaOptions" />
       </div>
       <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumValor') }}</p>
     </div>

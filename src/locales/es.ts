@@ -39,7 +39,6 @@ export default {
     priorizados: 'Priorizados',
     total: 'Total',
     comAds: 'Con Ads',
-    semAds: 'Sin Ads',
     empresas: 'Empresas',
     pipelineProducao: 'Pipeline de Producción',
     volumeMensal: 'Volumen Mensual',

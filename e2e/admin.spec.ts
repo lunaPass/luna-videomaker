@@ -70,7 +70,6 @@ test.describe('Admin', () => {
     await page.goto(`${BASE}/admin/dashboard`)
     await expect(page.getByRole('main').getByText('Priorizados')).toBeVisible()
     await expect(page.getByRole('main').getByText('Com Ads')).toBeVisible()
-    await expect(page.getByRole('main').getByText('Sem Ads')).toBeVisible()
     await expect(page.locator('p').filter({ hasText: 'Empresas' })).toBeVisible()
   })
 

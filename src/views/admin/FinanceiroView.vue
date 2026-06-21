@@ -1,27 +1,17 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, shallowRef } from 'vue'
 import * as db from '@/firebase/db'
 import type { Video, Moeda, VideoStatus } from '@/types/video'
 import { MOEDA_SIMBOLO } from '@/types/video'
 import type { Empresa } from '@/types/empresa'
 import type { Pessoa } from '@/types/pessoa'
 import { converter } from '@/composables/useCotacao'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js'
-import { Bar, Doughnut } from 'vue-chartjs'
+import { useCharts } from '@/composables/useCharts'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
-
+const BarComp = shallowRef<any>()
+const DoughnutComp = shallowRef<any>()
 const allVideos = ref<Video[]>([])
 const empresas = ref<Empresa[]>([])
 const pessoas = ref<Pessoa[]>([])
@@ -185,12 +175,15 @@ function setPage(page: number) {
 }
 
 onMounted(async () => {
-  const [videos, emp, pess, config] = await Promise.all([
+  const [videos, emp, pess, config, { Bar, Doughnut }] = await Promise.all([
     db.listarTodosVideos(),
     db.listarEmpresas(),
     db.listarTodasPessoas(),
     db.getConfig(),
+    useCharts(),
   ])
+  BarComp.value = Bar
+  DoughnutComp.value = Doughnut
   allVideos.value = videos
   empresas.value = emp
   pessoas.value = pess
@@ -265,16 +258,16 @@ onMounted(async () => {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div class="bg-white rounded-xl shadow-sm border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('financeiro.topVideos') }} ({{ moedaExibicao }})</h2>
-        <div class="h-80" v-if="topVideos.length > 0">
-          <Bar :data="topVideosData" :options="topVideosOptions" />
+        <div class="h-80" v-if="topVideos.length > 0 && BarComp">
+          <component :is="BarComp" :data="topVideosData" :options="topVideosOptions" />
         </div>
         <p v-else class="text-gray-400 text-center py-8">{{ t('financeiro.nenhumVideoValor') }}</p>
       </div>
       <div class="bg-white rounded-xl shadow-sm border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('financeiro.distribuicaoMoeda') }}</h2>
-        <div class="h-72 flex items-center justify-center" v-if="videosComValor.length > 0">
+        <div class="h-72 flex items-center justify-center" v-if="videosComValor.length > 0 && DoughnutComp">
           <div class="w-64">
-            <Doughnut :data="moedaChartData" :options="moedaChartOptions" />
+            <component :is="DoughnutComp" :data="moedaChartData" :options="moedaChartOptions" />
           </div>
         </div>
         <p v-else class="text-gray-400 text-center py-8">{{ t('financeiro.nenhumVideoValor') }}</p>
