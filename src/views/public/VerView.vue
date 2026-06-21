@@ -161,17 +161,24 @@ async function togglePriorizado(video: Video & { pessoaNome: string }) {
   video.priorizado = novo
   const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
-  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { priorizado: novo }, getToken())
-  await db.criarNotificacaoAdmin(empresaId, {
-    tipo: novo ? 'priorizado' : 'despriorizado',
-    videoId: video.id,
-    videoTitulo: video.titulo,
-    pessoaNome: video.pessoaNome,
-    empresaNome: empresa.value?.nome || '',
-    empresaId,
-    pessoaId: video.pessoaId,
-    _token: getToken(),
-  })
+  try {
+    await Promise.all([
+      db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { priorizado: novo }, getToken()),
+      db.criarNotificacaoAdmin(empresaId, {
+        tipo: novo ? 'priorizado' : 'despriorizado',
+        videoId: video.id,
+        videoTitulo: video.titulo,
+        pessoaNome: video.pessoaNome,
+        empresaNome: empresa.value?.nome || '',
+        empresaId,
+        pessoaId: video.pessoaId,
+        _token: getToken(),
+      }),
+    ])
+  } catch (e) {
+    console.error('Erro ao atualizar priorizado:', e)
+    video.priorizado = !novo
+  }
 }
 
 function iniciarEdicaoLink(videoId: string) {
@@ -187,17 +194,23 @@ async function salvarLinkMaterialBruto(video: Video & { pessoaNome: string }, li
   editandoLink.value[video.id] = false
   const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
-  await db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { linkMaterialBruto: link }, getToken())
-  await db.criarNotificacaoAdmin(empresaId, {
-    tipo: 'linkBruto',
-    videoId: video.id,
-    videoTitulo: video.titulo,
-    pessoaNome: video.pessoaNome,
-    empresaNome: empresa.value?.nome || '',
-    empresaId,
-    pessoaId: video.pessoaId,
-    _token: getToken(),
-  })
+  try {
+    await Promise.all([
+      db.atualizarVideoPublic(empresaId, video.pessoaId, video.id, { linkMaterialBruto: link }, getToken()),
+      db.criarNotificacaoAdmin(empresaId, {
+        tipo: 'linkBruto',
+        videoId: video.id,
+        videoTitulo: video.titulo,
+        pessoaNome: video.pessoaNome,
+        empresaNome: empresa.value?.nome || '',
+        empresaId,
+        pessoaId: video.pessoaId,
+        _token: getToken(),
+      }),
+    ])
+  } catch (e) {
+    console.error('Erro ao salvar link:', e)
+  }
 }
 
 async function copiarLink(videoId: string, url: string) {

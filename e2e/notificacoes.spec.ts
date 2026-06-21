@@ -58,8 +58,7 @@ test.describe('Notificações', () => {
     await page.waitForTimeout(500)
 
     const count = await contarNotificacoesFirestore(page)
-    expect(count).toBeGreaterThanOrEqual(0)
-    // Note: SDK offline mode may queue writes locally — checking >0 requires SDK online
+    expect(count).toBe(1)
   })
 
   test('VerView lê e limpa notificações do Firebase', async ({ page }) => {

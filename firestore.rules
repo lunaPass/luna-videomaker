@@ -104,7 +104,7 @@ service cloud.firestore {
             && (!request.resource.data.keys().hasAny(['linkVideoFinal']) || isValidString(request.resource.data.linkVideoFinal, 0, 2048)))
           ||
           // Public: visitor with valid empresa token can toggle priorizado and set linkMaterialBruto
-          (request.resource.data.keys().hasOnly(['priorizado', 'linkMaterialBruto'])
+          (request.resource.data.keys().hasOnly(['priorizado', 'linkMaterialBruto', '_token'])
             && request.resource.data.priorizado is bool
             && isValidString(request.resource.data.linkMaterialBruto, 0, 2048)
             && empresaToken(empresaId) == request.resource.data._token);

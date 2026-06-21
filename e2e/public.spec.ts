@@ -251,6 +251,10 @@ test.describe('Páginas públicas', () => {
 
     // Link deve aparecer
     await expect(page.getByText('e2e-test-link').first()).toBeVisible({ timeout: 10000 })
+
+    // Reload to verify persistence in Firestore
+    await page.reload()
+    await expect(page.getByText('e2e-test-link').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('ordenacao Z-A funciona', async ({ page }) => {

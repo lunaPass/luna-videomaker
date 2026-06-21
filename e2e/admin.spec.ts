@@ -2,6 +2,10 @@ import { test, expect } from '@playwright/test'
 import { autenticar } from './helpers.mjs'
 
 const BASE = '/luna-videomaker'
+const TOKENS = {
+  empresa: { 'luna-filmes': 'luna-filmes-tkn-0000000000000000' },
+  pessoa: {},
+}
 
 test.describe('Admin', () => {
 
@@ -453,4 +457,56 @@ test.describe('Admin', () => {
     await expect(page.getByText('Setup Gamer 2025').first()).toBeVisible()
   })
 
+  test('admin cria video e contratante ve na pagina publica', async ({ page }) => {
+    // Admin creates a video
+    await page.goto(`${BASE}/admin/empresas/empresa-1/pessoas/pessoa-1`)
+    await expect(page.getByRole('heading', { name: 'Ana Silva' })).toBeVisible()
+
+    await page.getByRole('button', { name: '+ Novo Vídeo' }).click()
+    await expect(page.getByRole('heading', { name: 'Novo Vídeo' })).toBeVisible()
+
+    await page.getByPlaceholder('Ex: Aula de inglês #42').fill('Video Sincronia Admin')
+    await page.getByRole('combobox').filter({ has: page.locator('option[value="postado"]') }).selectOption('postado')
+    await page.locator('label').filter({ hasText: 'YouTube' }).click()
+    await page.getByRole('button', { name: 'Salvar' }).click()
+    await expect(page.getByText('Video Sincronia Admin').first()).toBeVisible({ timeout: 10000 })
+
+    // Verify contractor sees it on the public page
+    await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+    await expect(page.getByText('Video Sincronia Admin').first()).toBeVisible()
+  })
+
+  test('contratante prioriza video e admin ve a mudanca', async ({ page }) => {
+    // Login as admin first
+    await page.goto(`${BASE}/admin/empresas/empresa-1/pessoas/pessoa-1`)
+    await expect(page.getByRole('heading', { name: 'Ana Silva' })).toBeVisible()
+
+    // Check that "Review Novo Smartphone" is NOT priorizado before
+    const card = page.locator('div').filter({ hasText: 'Review Novo Smartphone' }).first()
+    const starBefore = card.locator('button[title="Priorizado"], button[title="Priorizar"]')
+    const wasPriorizado = (await starBefore.getAttribute('title')) === 'Priorizado'
+    if (wasPriorizado) {
+      // Un-priorizado via public page first
+      await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
+      const toggleBtn = page.locator('button[title="Remover prioridade"]').first()
+      await toggleBtn.click()
+      await page.waitForTimeout(1000)
+    }
+
+    // Go to public page and toggle priorizado
+    await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+    const priorizarBtn = page.locator('button[title="Priorizar"]').first()
+    await priorizarBtn.click()
+
+    // Wait for Firestore write to complete
+    await page.waitForTimeout(2000)
+
+    // Verify on admin pessoa page
+    await page.goto(`${BASE}/admin/empresas/empresa-1/pessoas/pessoa-1`)
+    await expect(page.getByRole('heading', { name: 'Ana Silva' })).toBeVisible()
+    const adminCard = page.locator('div').filter({ hasText: 'Review Novo Smartphone' }).first()
+    await expect(adminCard.locator('[title="Priorizado"]').first()).toBeVisible()
+  })
 })
