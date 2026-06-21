@@ -35,7 +35,7 @@ service cloud.firestore {
 
       // Validate empresa creation
       allow create: if isAdmin()
-        && request.resource.data.keys().hasOnly(['nome', 'slug', 'token', 'criadoEm'])
+        && request.resource.data.keys().hasOnly(['nome', 'slug', 'token', 'criadoEm', 'locale'])
         && isValidString(request.resource.data.nome, 1, 100)
         && isValidString(request.resource.data.slug, 1, 100)
         && isValidString(request.resource.data.token, 32, 32)
@@ -73,7 +73,7 @@ service cloud.firestore {
           allow read: if true;
 
           allow create: if isAdmin()
-            && request.resource.data.keys().hasOnly(['titulo', 'status', 'ordem', 'criadoEm', 'dataPostagem', 'canais', 'ads', 'observacoes'])
+            && request.resource.data.keys().hasOnly(['titulo', 'status', 'ordem', 'criadoEm', 'atualizadoEm', 'dataPostagem', 'canais', 'ads', 'observacoes', 'priorizado', 'linkMaterialBruto', 'linkVideoFinal', 'valor', 'moeda'])
             && isValidString(request.resource.data.titulo, 1, 200)
             && request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado']
             && request.resource.data.ordem is number
@@ -82,19 +82,47 @@ service cloud.firestore {
             && request.resource.data.observacoes is string
             && request.resource.data.observacoes.size() <= 2000
             && (request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
-            && request.resource.data.criadoEm is timestamp;
+            && request.resource.data.criadoEm is timestamp
+            && request.resource.data.priorizado is bool
+            && request.resource.data.linkMaterialBruto is string
+            && request.resource.data.linkVideoFinal is string;
 
-          allow update: if isAdmin()
-            && request.resource.data.keys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem'])
+          allow update: if (isAdmin()
+            && request.resource.data.keys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem', 'priorizado', 'linkMaterialBruto', 'linkVideoFinal', 'atualizadoEm', 'valor', 'moeda'])
+            && (!request.resource.data.keys().hasAny(['atualizadoEm']) || request.resource.data.atualizadoEm is timestamp)
             && (!request.resource.data.keys().hasAny(['titulo']) || isValidString(request.resource.data.titulo, 1, 200))
             && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado'])
             && (!request.resource.data.keys().hasAny(['canais']) || isValidCanais(request.resource.data.canais))
             && (!request.resource.data.keys().hasAny(['ads']) || request.resource.data.ads is bool)
             && (!request.resource.data.keys().hasAny(['observacoes']) || (request.resource.data.observacoes is string && request.resource.data.observacoes.size() <= 2000))
             && (!request.resource.data.keys().hasAny(['dataPostagem']) || request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
-            && (!request.resource.data.keys().hasAny(['ordem']) || request.resource.data.ordem is number);
+            && (!request.resource.data.keys().hasAny(['ordem']) || request.resource.data.ordem is number)
+            && (!request.resource.data.keys().hasAny(['priorizado']) || request.resource.data.priorizado is bool)
+            && (!request.resource.data.keys().hasAny(['linkMaterialBruto']) || request.resource.data.linkMaterialBruto is string)
+            && (!request.resource.data.keys().hasAny(['linkVideoFinal']) || request.resource.data.linkVideoFinal is string))
+          ||
+          // Public: any visitor with the token can toggle priorizado and set linkMaterialBruto
+          (request.resource.data.keys().hasOnly(['priorizado', 'linkMaterialBruto'])
+            && request.resource.data.priorizado is bool
+            && request.resource.data.linkMaterialBruto is string);
           allow delete: if isAdmin();
         }
+
+        // ===============================================================
+        // Notificacoes da pessoa (cliente) — lidas via token, sem auth
+        // ===============================================================
+        match /notificacoes/{notificacaoId} {
+          allow read, delete: if true;
+          allow create: if isAdmin();
+        }
+      }
+
+      // ===============================================================
+      // NotificacoesAdmin (editor recebe do cliente) — admin only
+      // ===============================================================
+      match /notificacoesAdmin/{notificacaoId} {
+        allow read, create, update: if isAdmin();
+        allow delete: if isAdmin();
       }
     }
   }
