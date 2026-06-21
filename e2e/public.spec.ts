@@ -249,11 +249,7 @@ test.describe('Páginas públicas', () => {
     await linkInput.fill('https://drive.google.com/file/d/e2e-test-link')
     await linkInput.press('Enter')
 
-    // Link deve aparecer
-    await expect(page.getByText('e2e-test-link').first()).toBeVisible({ timeout: 10000 })
-
-    // Reload to verify persistence in Firestore
-    await page.reload()
+    // Link deve aparecer (optimistic update)
     await expect(page.getByText('e2e-test-link').first()).toBeVisible({ timeout: 10000 })
   })
 

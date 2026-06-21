@@ -20,7 +20,6 @@ const emulatorFlag = import.meta.env.VITE_FIREBASE_EMULATOR
 if (emulatorFlag === 'true') {
   connectFirestoreEmulator(db, '127.0.0.1', 8080)
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
-  // Expose Firestore for e2e tests
   ;(window as any).__firestore = db
   ;(window as any).__firestoreHelpers = { collection, getDocs, addDoc }
 }
