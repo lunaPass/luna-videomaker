@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { getFirestore, connectFirestoreEmulator, collection, getDocs, addDoc } from 'firebase/firestore'
+import { getAuth, connectAuthEmulator } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,29 +11,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-export const isLocalMode = !firebaseConfig.apiKey
+const firebaseApp = initializeApp(firebaseConfig)
+export const db = getFirestore(firebaseApp)
+export const auth = getAuth(firebaseApp)
 
-let firebaseApp: ReturnType<typeof initializeApp> | null = null
-let firebaseDb: ReturnType<typeof getFirestore> | null = null
-let firebaseAuth: ReturnType<typeof getAuth> | null = null
+const emulatorFlag = import.meta.env.VITE_FIREBASE_EMULATOR
 
-if (!isLocalMode) {
-  firebaseApp = initializeApp(firebaseConfig)
-  firebaseDb = getFirestore(firebaseApp)
-  firebaseAuth = getAuth(firebaseApp)
+if (emulatorFlag === 'true') {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+  // Expose Firestore for e2e tests
+  ;(window as any).__firestore = db
+  ;(window as any).__firestoreHelpers = { collection, getDocs, addDoc }
 }
-
-export const db = firebaseDb
-
-function getStoredUser() {
-  try {
-    const stored = localStorage.getItem('luna_local_auth')
-    return stored ? JSON.parse(stored) : null
-  } catch {
-    return null
-  }
-}
-
-export const auth: any = isLocalMode
-  ? { currentUser: getStoredUser() }
-  : firebaseAuth

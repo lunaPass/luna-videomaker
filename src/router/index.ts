@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { auth, isLocalMode } from '@/firebase/init'
+import { auth } from '@/firebase/init'
 
 const router = createRouter({
   history: createWebHistory('/luna-videomaker/'),
@@ -44,6 +44,11 @@ const router = createRouter({
           component: () => import('@/views/admin/VideosView.vue'),
         },
         {
+          path: 'financeiro',
+          name: 'Financeiro',
+          component: () => import('@/views/admin/FinanceiroView.vue'),
+        },
+        {
           path: 'config',
           name: 'Config',
           component: () => import('@/views/admin/ConfigView.vue'),
@@ -55,6 +60,11 @@ const router = createRouter({
       name: 'PublicView',
       component: () => import('@/views/public/VerView.vue'),
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('@/views/NotFoundView.vue'),
+    },
   ],
 })
 
@@ -62,7 +72,7 @@ router.beforeEach(async (to, _from, next) => {
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
 
   // Wait for Firebase Auth to restore session from IndexedDB
-  if (!isLocalMode && typeof auth.authStateReady === 'function') {
+  if (typeof auth.authStateReady === 'function') {
     await auth.authStateReady()
   }
 
