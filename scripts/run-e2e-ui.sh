@@ -4,6 +4,10 @@ set -e
 export JAVA_HOME="$HOME/java"
 export PATH="$JAVA_HOME/bin:$PATH"
 
+# Kill any existing emulator before starting fresh
+lsof -ti:8080 -ti:9099 -ti:4000 2>/dev/null | xargs -r kill -9
+sleep 1
+
 echo "==> Iniciando Firebase Emulators..."
 npx -y firebase-tools@latest emulators:start --only firestore,auth --project test &
 EMULATOR_PID=$!
