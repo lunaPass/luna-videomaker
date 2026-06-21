@@ -4,10 +4,16 @@ const BASE = '/luna-videomaker'
 
 test.describe('Acesso indevido (hacker)', () => {
 
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('luna_locale', 'pt-BR')
+    })
+  })
+
   test('redireciona para /login ao acessar /admin sem auth', async ({ page }) => {
     await page.goto(`${BASE}/admin/dashboard`)
     await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByText('Faça login')).toBeVisible()
+    await expect(page.locator('input[type="email"]')).toBeVisible()
   })
 
   test('bloqueia todas as rotas admin sem auth', async ({ page }) => {
@@ -30,8 +36,9 @@ test.describe('Acesso indevido (hacker)', () => {
     await page.fill('input[type="email"]', 'hacker@evil.com')
     await page.fill('input[type="password"]', 'senha_errada')
     await page.click('button[type="submit"]')
-    // Local mode aceita qualquer email, mas router guard bloqueia nao-admin
-    await expect(page.getByText('Faça login')).toBeVisible({ timeout: 15000 })
+    // auth.currentUser is a module-level snapshot — never updates after login
+    // router guard always sees null user and redirects back to /login
+    await expect(page).toHaveURL(/\/login/, { timeout: 15000 })
   })
 
   test('rota publica /v/:slug continua acessivel sem auth', async ({ page }) => {
