@@ -11,7 +11,7 @@
             <div class="flex items-center gap-2 mt-2">
               <StatusBadge :status="video.status" />
               <CanalTags :canais="video.canais" />
-              <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">Ads</span>
+              <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">{{ t('videos.ads') }}</span>
             </div>
           </div>
           <div v-if="video.dataPostagem" class="text-sm text-gray-400 shrink-0">
@@ -20,15 +20,18 @@
         </div>
         <p v-if="video.observacoes" class="text-sm text-gray-500 mt-2">{{ video.observacoes }}</p>
       </div>
-      <p v-if="videos.length === 0" class="text-gray-400 text-center py-8">Nenhum vídeo cadastrado ainda</p>
+      <p v-if="videos.length === 0" class="text-gray-400 text-center py-8">{{ t('pessoaDetail.nenhumVideo') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import StatusBadge from '@/components/admin/StatusBadge.vue'
 import CanalTags from '@/components/admin/CanalTags.vue'
 import type { Video } from '@/types/video'
+
+const { t } = useI18n()
 
 defineProps<{
   empresaNome: string

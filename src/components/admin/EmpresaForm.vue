@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { LOCALE_OPTIONS } from '@/locales'
 import type { EmpresaFormData } from '@/types/empresa'
+import type { Locale } from '@/locales'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   submit: [data: EmpresaFormData]
@@ -8,12 +13,13 @@ const emit = defineEmits<{
 }>()
 
 const nome = ref('')
+const locale = ref<Locale>('pt-BR')
 const loading = ref(false)
 
 async function handleSubmit() {
   if (!nome.value.trim()) return
   loading.value = true
-  await emit('submit', { nome: nome.value.trim() })
+  await emit('submit', { nome: nome.value.trim(), locale: locale.value })
   loading.value = false
 }
 </script>
@@ -24,7 +30,7 @@ async function handleSubmit() {
       <h2 class="text-lg font-bold mb-4">Nova Empresa</h2>
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresas.th.nome') }}</label>
           <input
             v-model="nome"
             type="text"
@@ -34,20 +40,32 @@ async function handleSubmit() {
             placeholder="Ex: English School"
           />
         </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresas.th.idioma') }}</label>
+          <select
+            v-model="locale"
+            required
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">
+              {{ opt.flag }} {{ opt.label }}
+            </option>
+          </select>
+        </div>
         <div class="flex justify-end gap-3">
           <button
             type="button"
             @click="emit('close')"
             class="px-4 py-2 text-gray-600 hover:text-gray-800"
           >
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="submit"
             :disabled="loading"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {{ loading ? 'Salvando...' : 'Salvar' }}
+            {{ loading ? t('common.saving') : t('common.save') }}
           </button>
         </div>
       </form>

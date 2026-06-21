@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { Video } from '@/types/video'
 import type { Empresa } from '@/types/empresa'
 import type { Pessoa } from '@/types/pessoa'
 import * as db from '@/firebase/db'
-import { notificarMudancaStatus } from '@/firebase/notificacoes'
 import StatusBadge from '@/components/admin/StatusBadge.vue'
 import CanalTags from '@/components/admin/CanalTags.vue'
 import VideoForm from '@/components/admin/VideoForm.vue'
@@ -24,20 +25,27 @@ const showVideoForm = ref(false)
 const editingVideo = ref<Video | null>(null)
 const errorMessage = ref('')
 const salvando = ref(false)
+const loading = ref(true)
 
 async function carregar() {
-  const empresaId = route.params.id as string
-  const pessoaId = route.params.pessoaId as string
+  try {
+    const empresaId = route.params.id as string
+    const pessoaId = route.params.pessoaId as string
 
-  empresa.value = await db.getEmpresaById(empresaId)
-  pessoa.value = await db.getPessoaById(empresaId, pessoaId)
+    empresa.value = await db.getEmpresaById(empresaId)
+    pessoa.value = await db.getPessoaById(empresaId, pessoaId)
 
-  if (!empresa.value || !pessoa.value) {
-    router.push('/admin/empresas')
-    return
+    if (!empresa.value || !pessoa.value) {
+      router.push('/admin/empresas')
+      return
+    }
+
+    videos.value = await db.listarVideos(empresaId, pessoaId)
+  } catch {
+    // Silently fail
+  } finally {
+    loading.value = false
   }
-
-  videos.value = await db.listarVideos(empresaId, pessoaId)
 }
 
 async function criarVideo(data: VideoFormData) {
@@ -49,7 +57,7 @@ async function criarVideo(data: VideoFormData) {
     showVideoForm.value = false
     await carregar()
   } catch (e: any) {
-    errorMessage.value = 'Erro ao criar vídeo: ' + (e?.message || 'desconhecido')
+    errorMessage.value = t('pessoaDetail.erroCriar') + (e?.message || t('common.unknown'))
   } finally {
     salvando.value = false
   }
@@ -62,13 +70,18 @@ async function atualizarVideo(data: VideoFormData) {
   const oldVideo = editingVideo.value
   try {
     await db.atualizarVideo(empresa.value.id, pessoa.value.id, editingVideo.value.id, data)
-    if (data.status !== oldVideo.status && pessoa.value) {
-      notificarMudancaStatus(pessoa.value.token, data.titulo, oldVideo.status, data.status)
+    if (data.status !== oldVideo.status && pessoa.value && empresa.value) {
+      await db.criarNotificacao(empresa.value.id, pessoa.value.id, {
+        videoTitulo: data.titulo,
+        statusAntigo: oldVideo.status,
+        statusNovo: data.status,
+        timestamp: Date.now(),
+      })
     }
     editingVideo.value = null
     await carregar()
   } catch (e: any) {
-    errorMessage.value = 'Erro ao atualizar vídeo: ' + (e?.message || 'desconhecido')
+    errorMessage.value = t('pessoaDetail.erroAtualizar') + (e?.message || t('common.unknown'))
   } finally {
     salvando.value = false
   }
@@ -96,6 +109,11 @@ async function importarVideos(rows: any[]) {
       canais: (row['Canais'] || row.canais || '').split(',').map((c: string) => c.trim()).filter(Boolean),
       ads: (row['Ads'] || row.ads) === 'Sim' || (row['Ads'] || row.ads) === true,
       observacoes: row['Observações'] || row.observacoes || '',
+      linkMaterialBruto: row['Material Bruto'] || row.linkMaterialBruto || '',
+      linkVideoFinal: row['Vídeo Final'] || row.linkVideoFinal || '',
+      priorizado: row['Priorizado'] === 'Sim',
+      valor: Number(row['Valor'] ?? row.valor ?? 0),
+      moeda: row['Moeda'] ?? row.moeda ?? 'BRL',
     }
     if (data.titulo) {
       await db.criarVideo(empresa.value.id, pessoa.value.id, data)
@@ -108,7 +126,15 @@ onMounted(carregar)
 </script>
 
 <template>
-  <div v-if="empresa && pessoa">
+  <!-- Skeleton shimmer -->
+  <div v-if="loading" class="animate-pulse space-y-6">
+    <div class="h-4 w-48 skeleton-pulse mb-2" />
+    <div class="h-8 w-64 skeleton-pulse mb-6" />
+
+    <div v-for="i in 5" :key="i" class="h-20 skeleton-pulse" />
+  </div>
+
+  <div v-else-if="empresa && pessoa">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
         <button
@@ -123,14 +149,14 @@ onMounted(carregar)
         <XlsxExportButton
           :dados="videos"
           :nome-arquivo="`videos-${empresa.slug}-${pessoa.nome}`"
-          titulo="Exportar XLSX"
+          :titulo="t('pessoaDetail.exportarXlsx')"
         />
         <XlsxImportButton @imported="importarVideos" />
         <button
           @click="showVideoForm = true"
           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
-          + Novo Vídeo
+          {{ t('pessoaDetail.novoVideo') }}
         </button>
       </div>
     </div>
@@ -141,7 +167,7 @@ onMounted(carregar)
 
     <div class="bg-white rounded-xl shadow-sm border">
       <div v-if="videos.length === 0" class="p-8 text-center text-gray-400">
-        Nenhum vídeo cadastrado
+        {{ t('pessoaDetail.nenhumVideo') }}
       </div>
 
       <VueDraggable
@@ -166,7 +192,14 @@ onMounted(carregar)
           </span>
 
           <div class="flex-1 min-w-0">
-            <p class="font-medium truncate">{{ video.titulo }}</p>
+            <div class="flex items-center gap-1.5">
+              <span v-if="video.priorizado" class="text-yellow-500 shrink-0" :title="t('pessoaDetail.priorizado')">
+                <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </span>
+              <p class="font-medium truncate">{{ video.titulo }}</p>
+            </div>
             <div class="flex flex-wrap items-center gap-2 mt-1">
               <StatusBadge :status="video.status" />
               <CanalTags :canais="video.canais" />
@@ -177,13 +210,37 @@ onMounted(carregar)
                 {{ video.dataPostagem.toLocaleDateString() }}
               </span>
             </div>
+            <div v-if="video.linkMaterialBruto || video.linkVideoFinal" class="flex flex-wrap gap-2 mt-1.5">
+              <a
+                v-if="video.linkMaterialBruto"
+                :href="video.linkMaterialBruto"
+                target="_blank"
+                class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                {{ t('pessoaDetail.materialBruto') }}
+              </a>
+              <a
+                v-if="video.linkVideoFinal"
+                :href="video.linkVideoFinal"
+                target="_blank"
+                class="inline-flex items-center gap-1 text-xs text-green-600 hover:text-green-800"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                {{ t('pessoaDetail.videoFinal') }}
+              </a>
+            </div>
           </div>
 
           <div class="flex gap-1 shrink-0">
             <button
               @click="editingVideo = video"
               class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              aria-label="Editar vídeo"
+              :aria-label="t('pessoaDetail.editarVideo')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
@@ -193,7 +250,7 @@ onMounted(carregar)
             <button
               @click="excluirVideo(video.id)"
               class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              aria-label="Excluir vídeo"
+              :aria-label="t('pessoaDetail.excluirVideo')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
                 <polyline points="3 6 5 6 21 6"/>

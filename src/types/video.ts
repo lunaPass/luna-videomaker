@@ -9,6 +9,14 @@ export const VIDEO_STATUS_LABELS: Record<VideoStatus, string> = {
 
 export const VIDEO_STATUS_ORDER: VideoStatus[] = ['gravado', 'editando', 'revisao', 'postado']
 
+export type Moeda = 'BRL' | 'USD' | 'EUR'
+
+export const MOEDA_SIMBOLO: Record<Moeda, string> = {
+  BRL: 'R$',
+  USD: 'US$',
+  EUR: '€',
+}
+
 export interface Video {
   id: string
   titulo: string
@@ -21,6 +29,12 @@ export interface Video {
   pessoaId: string
   empresaId: string
   criadoEm: Date
+  atualizadoEm: Date
+  priorizado: boolean
+  linkMaterialBruto: string
+  linkVideoFinal: string
+  valor: number
+  moeda: Moeda
 }
 
 export interface VideoFormData {
@@ -30,4 +44,9 @@ export interface VideoFormData {
   canais: string[]
   ads: boolean
   observacoes: string
+  priorizado?: boolean
+  linkMaterialBruto?: string
+  linkVideoFinal?: string
+  valor: number
+  moeda: Moeda
 }

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { login } from '@/firebase/auth'
+
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -16,7 +19,7 @@ async function handleSubmit() {
     await login(email.value, password.value)
     router.push('/admin/dashboard')
   } catch (e: any) {
-    error.value = 'Email ou senha inválidos'
+    error.value = t('login.erroLogin')
   } finally {
     loading.value = false
   }
@@ -26,22 +29,22 @@ async function handleSubmit() {
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gray-50">
     <div class="w-full max-w-sm bg-white rounded-xl shadow-lg p-8">
-      <h1 class="text-2xl font-bold text-center mb-2">Luna Videomaker</h1>
-      <p class="text-gray-500 text-center text-sm mb-6">Faça login para gerenciar</p>
+      <h1 class="text-2xl font-bold text-center mb-2">{{ t('login.titulo') }}</h1>
+      <p class="text-gray-500 text-center text-sm mb-6">{{ t('login.subtitulo') }}</p>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('login.email') }}</label>
           <input
             v-model="email"
             type="email"
             required
             class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="seu@email.com"
+            :placeholder="t('login.placeholderEmail')"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('login.senha') }}</label>
           <input
             v-model="password"
             type="password"
@@ -58,7 +61,7 @@ async function handleSubmit() {
           :disabled="loading"
           class="w-full bg-blue-600 text-white rounded-lg py-2 font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {{ loading ? 'Entrando...' : 'Entrar' }}
+          {{ loading ? t('login.entrando') : t('login.entrar') }}
         </button>
       </form>
     </div>

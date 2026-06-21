@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   imported: [dados: any[]]
@@ -12,7 +15,7 @@ async function handleFileUpload(event: Event) {
   if (!file) return
 
   if (file.size > 10 * 1024 * 1024) {
-    alert('Arquivo muito grande. Tamanho máximo: 10MB')
+    alert(t('xlsx.arquivoGrande'))
     return
   }
 
@@ -41,7 +44,7 @@ async function handleFileUpload(event: Event) {
 
     emit('imported', json)
   } catch {
-    alert('Erro ao ler arquivo. Verifique se é um XLSX válido.')
+    alert(t('xlsx.erroArquivo'))
   } finally {
     loading.value = false
   }
@@ -52,7 +55,7 @@ async function handleFileUpload(event: Event) {
 
 <template>
   <label class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer">
-    📤 {{ loading ? 'Importando...' : 'Importar XLSX' }}
+    📤 {{ loading ? t('xlsx.importando') : t('xlsx.importar') }}
     <input type="file" accept=".xlsx,.xls" class="hidden" @change="handleFileUpload" />
   </label>
 </template>

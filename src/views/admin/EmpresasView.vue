@@ -1,19 +1,28 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Empresa } from '@/types/empresa'
+import type { Empresa, EmpresaFormData } from '@/types/empresa'
 import * as db from '@/firebase/db'
 import EmpresaForm from '@/components/admin/EmpresaForm.vue'
 
 const empresas = ref<Empresa[]>([])
 const showForm = ref(false)
+const loading = ref(true)
 const router = useRouter()
 
 async function listar() {
-  empresas.value = await db.listarEmpresas()
+  try {
+    empresas.value = await db.listarEmpresas()
+  } catch {
+    // Silently fail — empty state handles it
+  } finally {
+    loading.value = false
+  }
 }
 
-async function criar(data: { nome: string }) {
+async function criar(data: EmpresaFormData) {
   await db.criarEmpresa(data)
   showForm.value = false
   await listar()
@@ -29,13 +38,28 @@ onMounted(listar)
 
 <template>
   <div>
+    <!-- Skeleton shimmer -->
+    <div v-if="loading" class="animate-pulse space-y-6">
+      <div class="flex items-center justify-between mb-6 gap-3">
+        <div class="h-8 w-48 skeleton-pulse" />
+        <div class="h-10 w-32 skeleton-pulse rounded-lg" />
+      </div>
+      <div class="hidden md:block space-y-3">
+        <div v-for="i in 5" :key="i" class="h-12 skeleton-pulse" />
+      </div>
+      <div class="md:hidden space-y-3">
+        <div v-for="i in 3" :key="i" class="h-24 skeleton-pulse" />
+      </div>
+    </div>
+
+    <template v-else>
     <div class="flex items-center justify-between mb-6 gap-3">
-      <h1 class="text-xl md:text-2xl font-bold">Empresas</h1>
+      <h1 class="text-xl md:text-2xl font-bold">{{ t('empresas.title') }}</h1>
       <button
         @click="showForm = true"
         class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shrink-0"
       >
-        + Nova Empresa
+        {{ t('empresas.novaEmpresa') }}
       </button>
     </div>
 
@@ -44,10 +68,10 @@ onMounted(listar)
       <table class="w-full">
         <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
           <tr>
-            <th class="px-4 py-3">Nome</th>
-            <th class="px-4 py-3">Slug</th>
-            <th class="px-4 py-3">Link</th>
-            <th class="px-4 py-3">Ações</th>
+            <th class="px-4 py-3">{{ t('empresas.th.nome') }}</th>
+            <th class="px-4 py-3">{{ t('empresas.th.slug') }}</th>
+            <th class="px-4 py-3">{{ t('empresas.th.link') }}</th>
+            <th class="px-4 py-3">{{ t('empresas.th.acoes') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y">
@@ -59,7 +83,7 @@ onMounted(listar)
                 @click="copiarLink(empresa)"
                 class="text-sm text-blue-600 hover:text-blue-800"
               >
-                Copiar
+                {{ t('common.copy') }}
               </button>
             </td>
             <td class="px-4 py-3">
@@ -67,13 +91,13 @@ onMounted(listar)
                 @click="router.push(`/admin/empresas/${empresa.id}`)"
                 class="text-sm text-blue-600 hover:text-blue-800 font-medium"
               >
-                Ver
+                {{ t('common.view') }}
               </button>
             </td>
           </tr>
           <tr v-if="empresas.length === 0">
             <td colspan="4" class="px-4 py-8 text-center text-gray-400">
-              Nenhuma empresa cadastrada
+              {{ t('empresas.nenhumaEmpresa') }}
             </td>
           </tr>
         </tbody>
@@ -94,21 +118,22 @@ onMounted(listar)
             @click="copiarLink(empresa)"
             class="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            Copiar link
+            {{ t('empresas.copiarLink') }}
           </button>
           <button
             @click="router.push(`/admin/empresas/${empresa.id}`)"
             class="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            Ver pessoas
+            {{ t('empresas.verPessoas') }}
           </button>
         </div>
       </div>
       <p v-if="empresas.length === 0" class="text-gray-400 text-center py-8">
-        Nenhuma empresa cadastrada
+        {{ t('empresas.nenhumaEmpresa') }}
       </p>
     </div>
 
     <EmpresaForm v-if="showForm" @submit="criar" @close="showForm = false" />
+  </template>
   </div>
 </template>

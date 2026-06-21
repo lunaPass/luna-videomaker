@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 const props = defineProps<{
   dados: any[]
   nomeArquivo: string
@@ -8,15 +12,20 @@ const props = defineProps<{
 async function exportar() {
   const Excel = await import('exceljs').then(m => m.default)
   const workbook = new Excel.Workbook()
-  const ws = workbook.addWorksheet('Vídeos')
+  const ws = workbook.addWorksheet(t('xlsx.worksheet'))
 
   ws.columns = [
-    { header: 'Título', key: 'titulo', width: 40 },
-    { header: 'Status', key: 'status', width: 15 },
-    { header: 'Data Postagem', key: 'dataPostagem', width: 15 },
-    { header: 'Canais', key: 'canais', width: 30 },
-    { header: 'Ads', key: 'ads', width: 8 },
-    { header: 'Observações', key: 'observacoes', width: 30 },
+    { header: t('xlsx.columns.titulo'), key: 'titulo', width: 40 },
+    { header: t('xlsx.columns.status'), key: 'status', width: 15 },
+    { header: t('xlsx.columns.dataPostagem'), key: 'dataPostagem', width: 15 },
+    { header: t('xlsx.columns.canais'), key: 'canais', width: 30 },
+    { header: t('xlsx.columns.ads'), key: 'ads', width: 8 },
+    { header: t('xlsx.columns.observacoes'), key: 'observacoes', width: 30 },
+    { header: t('xlsx.columns.materialBruto'), key: 'linkMaterialBruto', width: 40 },
+    { header: t('xlsx.columns.videoFinal'), key: 'linkVideoFinal', width: 40 },
+    { header: t('xlsx.columns.priorizado'), key: 'priorizado', width: 12 },
+    { header: t('xlsx.columns.valor'), key: 'valor', width: 15 },
+    { header: t('xlsx.columns.moeda'), key: 'moeda', width: 8 },
   ]
 
   props.dados.forEach(d => {
@@ -25,8 +34,13 @@ async function exportar() {
       status: d.status,
       dataPostagem: d.dataPostagem?.toLocaleDateString('pt-BR') ?? '',
       canais: Array.isArray(d.canais) ? d.canais.join(', ') : '',
-      ads: d.ads ? 'Sim' : 'Não',
+      ads: d.ads ? t('common.yes') : t('common.no'),
       observacoes: d.observacoes ?? '',
+      linkMaterialBruto: d.linkMaterialBruto ?? '',
+      linkVideoFinal: d.linkVideoFinal ?? '',
+      priorizado: d.priorizado ? t('common.yes') : t('common.no'),
+      valor: d.valor ?? 0,
+      moeda: d.moeda ?? 'BRL',
     })
   })
 

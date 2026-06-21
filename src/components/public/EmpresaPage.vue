@@ -13,17 +13,20 @@
           @click="$emit('selectPessoa', pessoa.id)"
           class="text-sm text-blue-600 hover:text-blue-800 mt-2"
         >
-          Ver vídeos &rarr;
+          {{ t('empresaDetail.verVideos') }} &rarr;
         </button>
       </div>
     </div>
-    <p v-else class="text-gray-400 text-center py-8">Nenhuma pessoa cadastrada</p>
+    <p v-else class="text-gray-400 text-center py-8">{{ t('empresaDetail.nenhumaPessoa') }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { Empresa } from '@/types/empresa'
 import type { Pessoa } from '@/types/pessoa'
+
+const { t } = useI18n()
 
 defineProps<{
   empresa: Empresa | null

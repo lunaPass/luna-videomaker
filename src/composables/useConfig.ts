@@ -3,7 +3,7 @@ import type { Config } from '@/types/config'
 import * as db from '@/firebase/db'
 
 export function useConfig() {
-  const config = ref<Config>({ canais: [] })
+  const config = ref<Config>({ canais: [], usdToBrl: 5.0, eurToBrl: 5.5 })
   const loading = ref(false)
 
   async function carregar() {
