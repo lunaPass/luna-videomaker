@@ -15,7 +15,7 @@ EMULATOR_PID=$!
 cleanup() {
   echo "==> Parando emulators..."
   kill $EMULATOR_PID 2>/dev/null
-  wait $EMULATOR_PID 2>/dev/null
+  wait $EMULATOR_PID 2>/dev/null || true
   echo "==> Emulators parados."
 }
 trap cleanup EXIT
