@@ -1,0 +1,1 @@
+import{r as o}from"./vendor-vue-DhFPqsgY.js";function a(){const n=o("Notification"in window),i=o(Notification.permission);return{supported:n,permission:i,request:async()=>{const t=await Notification.requestPermission();return i.value=t,t},notify:(t,e)=>{i.value==="granted"&&new Notification(t,e)}}}export{a as u};
