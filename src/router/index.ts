@@ -48,8 +48,13 @@ const router = createRouter({
           name: 'Financeiro',
           component: () => import('@/views/admin/FinanceiroView.vue'),
         },
-        {
-          path: 'config',
+          {
+            path: 'notificacoes',
+            name: 'Notificacoes',
+            component: () => import('@/views/admin/NotificacoesView.vue'),
+          },
+          {
+            path: 'config',
           name: 'Config',
           component: () => import('@/views/admin/ConfigView.vue'),
         },

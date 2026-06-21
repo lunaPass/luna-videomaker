@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { LOCALE_OPTIONS } from '@/locales'
-import type { EmpresaFormData } from '@/types/empresa'
+import type { Empresa, EmpresaFormData } from '@/types/empresa'
 import type { Locale } from '@/locales'
 
 const { t } = useI18n()
+
+const props = defineProps<{
+  empresa?: Empresa | null
+}>()
 
 const emit = defineEmits<{
   submit: [data: EmpresaFormData]
@@ -15,6 +19,13 @@ const emit = defineEmits<{
 const nome = ref('')
 const locale = ref<Locale>('pt-BR')
 const loading = ref(false)
+
+onMounted(() => {
+  if (props.empresa) {
+    nome.value = props.empresa.nome
+    locale.value = props.empresa.locale as Locale
+  }
+})
 
 async function handleSubmit() {
   if (!nome.value.trim()) return
@@ -27,7 +38,7 @@ async function handleSubmit() {
 <template>
   <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="emit('close')">
     <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-      <h2 class="text-lg font-bold mb-4">Nova Empresa</h2>
+      <h2 class="text-lg font-bold mb-4">{{ empresa ? t('empresas.editarEmpresa') : t('empresas.novaEmpresa') }}</h2>
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresas.th.nome') }}</label>

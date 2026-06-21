@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { PessoaFormData } from '@/types/pessoa'
+import type { Pessoa, PessoaFormData } from '@/types/pessoa'
 
 const { t } = useI18n()
+
+const props = defineProps<{
+  pessoa?: Pessoa | null
+}>()
 
 const emit = defineEmits<{
   submit: [data: PessoaFormData]
@@ -12,6 +16,12 @@ const emit = defineEmits<{
 
 const nome = ref('')
 const loading = ref(false)
+
+onMounted(() => {
+  if (props.pessoa) {
+    nome.value = props.pessoa.nome
+  }
+})
 
 async function handleSubmit() {
   if (!nome.value.trim()) return
@@ -24,7 +34,7 @@ async function handleSubmit() {
 <template>
   <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="emit('close')">
     <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-      <h2 class="text-lg font-bold mb-4">Nova Pessoa</h2>
+      <h2 class="text-lg font-bold mb-4">{{ pessoa ? t('empresaDetail.editarPessoa') : t('empresaDetail.novaPessoa') }}</h2>
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresaDetail.th.nome') }}</label>

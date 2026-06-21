@@ -25,6 +25,7 @@ const navItems = computed(() => [
   { label: t('nav.empresas'), path: '/admin/empresas', icon: 'empresas' },
   { label: t('nav.videos'), path: '/admin/videos', icon: 'videos' },
   { label: t('nav.financeiro'), path: '/admin/financeiro', icon: 'financeiro' },
+  { label: t('nav.notificacoes'), path: '/admin/notificacoes', icon: 'sino' },
   { label: t('nav.config'), path: '/admin/config', icon: 'config' },
 ])
 
