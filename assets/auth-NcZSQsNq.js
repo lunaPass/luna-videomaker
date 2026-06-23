@@ -1,0 +1,1 @@
+import{a as t}from"./index-DwH9S_uf.js";import{o as a,s as r,b as s}from"./vendor-firebase-C6d08EAn.js";function e(n,o){return s(t,n,o)}function g(){return r(t)}function h(n){return a(t,n)}export{g as a,e as l,h as o};
