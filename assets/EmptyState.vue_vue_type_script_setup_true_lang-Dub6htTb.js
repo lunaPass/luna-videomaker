@@ -1,0 +1,1 @@
+import{h as t,j as s,t as a,o}from"./vendor-vue-D9m3Dxlx.js";const n={class:"text-gray-400 text-center py-8"},m=t({__name:"EmptyState",props:{message:{}},setup(e){return(r,c)=>(o(),s("p",n,a(e.message),1))}});export{m as _};
