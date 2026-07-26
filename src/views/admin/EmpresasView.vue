@@ -6,6 +6,10 @@ import { useRouter } from 'vue-router'
 import type { Empresa, EmpresaFormData } from '@/types/empresa'
 import * as db from '@/firebase/db'
 import EmpresaForm from '@/components/admin/EmpresaForm.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
+import { Copy, Pencil, Trash2, Eye } from '@lucide/vue'
 
 const empresas = ref<Empresa[]>([])
 const showForm = ref(false)
@@ -17,8 +21,8 @@ const router = useRouter()
 async function listar() {
   try {
     empresas.value = await db.listarEmpresas()
-  } catch {
-    // Silently fail
+  } catch (e) {
+    console.error('Erro ao carregar empresas:', e)
   } finally {
     loading.value = false
   }
@@ -54,35 +58,21 @@ onMounted(listar)
 
 <template>
   <div>
-    <!-- Skeleton shimmer -->
-    <div v-if="loading" class="animate-pulse space-y-6">
-      <div class="flex items-center justify-between mb-6 gap-3">
-        <div class="h-8 w-48 skeleton-pulse" />
-        <div class="h-10 w-32 skeleton-pulse rounded-lg" />
-      </div>
-      <div class="hidden md:block space-y-3">
-        <div v-for="i in 5" :key="i" class="h-12 skeleton-pulse" />
-      </div>
-      <div class="md:hidden space-y-3">
-        <div v-for="i in 3" :key="i" class="h-24 skeleton-pulse" />
-      </div>
-    </div>
-
-    <template v-else>
+    <LoadingSkeleton :loading="loading" type="table" :rows="5">
     <div class="flex items-center justify-between mb-6 gap-3">
       <h1 class="text-xl md:text-2xl font-bold">{{ t('empresas.title') }}</h1>
       <button
         @click="showForm = true"
-        class="bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shrink-0"
+        class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium shrink-0"
       >
         {{ t('empresas.novaEmpresa') }}
       </button>
     </div>
 
     <!-- Desktop table -->
-    <div class="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="hidden md:block bg-surface rounded-xl shadow-sm dark:shadow-none border border-border overflow-hidden">
       <table class="w-full">
-        <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+        <thead class="bg-surface-muted text-left text-sm font-medium text-foreground-muted">
           <tr>
             <th class="px-4 py-3">{{ t('empresas.th.nome') }}</th>
             <th class="px-4 py-3">{{ t('empresas.th.slug') }}</th>
@@ -91,13 +81,13 @@ onMounted(listar)
           </tr>
         </thead>
         <tbody class="divide-y">
-          <tr v-for="empresa in empresas" :key="empresa.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">{{ empresa.nome }}</td>
-            <td class="px-4 py-3 text-gray-500">{{ empresa.slug }}</td>
+          <tr v-for="empresa in empresas" :key="empresa.id" class="hover:bg-surface-muted">
+            <td class="px-4 py-3 font-medium text-foreground">{{ empresa.nome }}</td>
+            <td class="px-4 py-3 text-foreground-muted">{{ empresa.slug }}</td>
             <td class="px-4 py-3">
               <button
                 @click="copiarLink(empresa)"
-                class="text-sm text-blue-600 hover:text-blue-800"
+                class="text-sm text-primary hover:text-primary-hover"
               >
                 {{ t('common.copy') }}
               </button>
@@ -106,7 +96,7 @@ onMounted(listar)
               <div class="flex items-center gap-2">
                 <button
                   @click="editingEmpresa = empresa"
-                  class="text-sm text-gray-600 hover:text-blue-600"
+                  class="text-sm text-foreground-secondary hover:text-primary"
                   :title="t('actions.editar')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
@@ -116,7 +106,7 @@ onMounted(listar)
                 </button>
                 <button
                   @click="deletingEmpresa = empresa"
-                  class="text-sm text-gray-600 hover:text-red-600"
+                  class="text-sm text-foreground-secondary hover:text-destructive"
                   :title="t('actions.excluir')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
@@ -128,7 +118,7 @@ onMounted(listar)
                 </button>
                 <button
                   @click="router.push(`/admin/empresas/${empresa.id}`)"
-                  class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  class="text-sm text-primary hover:text-primary-hover font-medium"
                 >
                   {{ t('common.view') }}
                 </button>
@@ -136,8 +126,8 @@ onMounted(listar)
             </td>
           </tr>
           <tr v-if="empresas.length === 0">
-            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
-              {{ t('empresas.nenhumaEmpresa') }}
+            <td colspan="4">
+              <EmptyState :message="t('empresas.nenhumaEmpresa')" />
             </td>
           </tr>
         </tbody>
@@ -149,64 +139,54 @@ onMounted(listar)
       <div
         v-for="empresa in empresas"
         :key="empresa.id"
-        class="bg-white rounded-xl shadow-sm border p-4"
+        class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-4"
       >
-        <div class="font-medium text-gray-900">{{ empresa.nome }}</div>
-        <div class="text-sm text-gray-500 mt-0.5">{{ empresa.slug }}</div>
-        <div class="flex gap-3 mt-3">
+        <div class="font-medium text-foreground">{{ empresa.nome }}</div>
+        <div class="text-sm text-foreground-muted mt-0.5">{{ empresa.slug }}</div>
+        <div class="flex gap-2 mt-3">
           <button
             @click="copiarLink(empresa)"
-            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            class="text-primary hover:text-primary-hover min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-primary-soft transition-colors"
+            :aria-label="t('empresas.copiarLink')"
           >
-            {{ t('empresas.copiarLink') }}
+            <Copy class="w-4 h-4" />
           </button>
           <button
             @click="editingEmpresa = empresa"
-            class="text-sm text-gray-600 hover:text-blue-600"
+            class="text-foreground-secondary hover:text-primary min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-surface-muted transition-colors"
+            :aria-label="t('actions.editar')"
           >
-            {{ t('actions.editar') }}
+            <Pencil class="w-4 h-4" />
           </button>
           <button
             @click="deletingEmpresa = empresa"
-            class="text-sm text-gray-600 hover:text-red-600"
+            class="text-foreground-secondary hover:text-destructive min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-surface-muted transition-colors"
+            :aria-label="t('actions.excluir')"
           >
-            {{ t('actions.excluir') }}
+            <Trash2 class="w-4 h-4" />
           </button>
           <button
             @click="router.push(`/admin/empresas/${empresa.id}`)"
-            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            class="text-primary hover:text-primary-hover min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-primary-soft transition-colors"
+            :aria-label="t('empresas.verPessoas')"
           >
-            {{ t('empresas.verPessoas') }}
+            <Eye class="w-4 h-4" />
           </button>
         </div>
       </div>
-      <p v-if="empresas.length === 0" class="text-gray-400 text-center py-8">
-        {{ t('empresas.nenhumaEmpresa') }}
-      </p>
+      <EmptyState v-if="empresas.length === 0" :message="t('empresas.nenhumaEmpresa')" />
     </div>
 
     <EmpresaForm v-if="showForm" @submit="criar" @close="showForm = false" />
     <EmpresaForm v-if="editingEmpresa" :empresa="editingEmpresa" @submit="atualizar" @close="editingEmpresa = null" />
 
-    <!-- Delete confirmation modal -->
-    <div v-if="deletingEmpresa"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      @click.self="deletingEmpresa = null">
-      <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-        <h2 class="text-lg font-bold mb-2">{{ t('empresas.excluirEmpresa') }}</h2>
-        <p class="text-sm text-gray-600 mb-6">
-          {{ t('empresas.confirmarExclusao') }} <strong>{{ deletingEmpresa.nome }}</strong>?
-        </p>
-        <div class="flex justify-end gap-3">
-          <button @click="deletingEmpresa = null" class="px-4 py-2 text-gray-600 hover:text-gray-800">
-            {{ t('common.cancel') }}
-          </button>
-          <button @click="confirmarExcluir" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-            {{ t('actions.excluir') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </template>
+    <ConfirmDeleteModal
+      :show="!!deletingEmpresa"
+      :item-name="deletingEmpresa?.nome || ''"
+      item-type="empresa"
+      @confirm="confirmarExcluir"
+      @cancel="deletingEmpresa = null"
+    />
+  </LoadingSkeleton>
   </div>
 </template>

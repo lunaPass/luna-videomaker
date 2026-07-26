@@ -43,7 +43,8 @@ async function handleFileUpload(event: Event) {
     })
 
     emit('imported', json)
-  } catch {
+  } catch (e) {
+    console.error('Erro ao importar XLSX:', e)
     alert(t('xlsx.erroArquivo'))
   } finally {
     loading.value = false
@@ -54,7 +55,7 @@ async function handleFileUpload(event: Event) {
 </script>
 
 <template>
-  <label class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer">
+  <label class="text-sm bg-surface-muted text-foreground-secondary px-3 py-2.5 rounded-lg hover:bg-surface-muted cursor-pointer">
     📤 {{ loading ? t('xlsx.importando') : t('xlsx.importar') }}
     <input type="file" accept=".xlsx,.xls" class="hidden" @change="handleFileUpload" />
   </label>

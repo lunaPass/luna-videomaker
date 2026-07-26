@@ -29,8 +29,8 @@ const statusItems = VIDEO_STATUS_ORDER
       :class="[
         'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
         selected === 'todos' && !priorizadosAtivo
-          ? 'bg-blue-600 text-white border-blue-600'
-          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50',
+          ? 'bg-primary-700 text-white border-primary-600'
+          : 'bg-white dark:bg-muted-800 text-gray-600 dark:text-muted-300 border-gray-300 dark:border-muted-600 hover:bg-gray-50 dark:hover:bg-muted-700',
       ]"
     >
       {{ t('videos.todosStatus') }}
@@ -41,7 +41,7 @@ const statusItems = VIDEO_STATUS_ORDER
         'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
         priorizadosAtivo
           ? 'bg-yellow-400 text-yellow-900 border-yellow-400'
-          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50',
+          : 'bg-white dark:bg-muted-800 text-gray-600 dark:text-muted-300 border-gray-300 dark:border-muted-600 hover:bg-gray-50 dark:hover:bg-muted-700',
       ]"
     >
       <svg viewBox="0 0 24 24" :fill="priorizadosAtivo ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 inline-block align-middle">
@@ -56,13 +56,13 @@ const statusItems = VIDEO_STATUS_ORDER
       :class="[
         'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
         selected === opt && !priorizadosAtivo
-          ? 'bg-blue-600 text-white border-blue-600'
-          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50',
+          ? 'bg-primary-700 text-white border-primary-600'
+          : 'bg-white dark:bg-muted-800 text-gray-600 dark:text-muted-300 border-gray-300 dark:border-muted-600 hover:bg-gray-50 dark:hover:bg-muted-700',
       ]"
     >
       {{ t('status.' + opt) }}
       <span
-        :class="selected === opt && !priorizadosAtivo ? 'text-blue-200' : 'text-gray-400'"
+        :class="selected === opt && !priorizadosAtivo ? 'text-primary-200' : 'text-gray-400 dark:text-muted-500'"
       >
         ({{ counts[opt] || 0 }})
       </span>

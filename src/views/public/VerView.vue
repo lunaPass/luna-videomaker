@@ -159,7 +159,7 @@ async function carregar() {
 async function togglePriorizado(video: Video & { pessoaNome: string }) {
   const novo = !video.priorizado
   video.priorizado = novo
-  const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
+  const empresaId = empresa.value?.id || empresaIdNotif.value || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
   try {
     await Promise.all([
@@ -192,7 +192,7 @@ function cancelarEdicaoLink(videoId: string) {
 async function salvarLinkMaterialBruto(video: Video & { pessoaNome: string }, link: string) {
   video.linkMaterialBruto = link
   editandoLink.value[video.id] = false
-  const empresaId = empresa.value?.id || (await db.getEmpresaByToken(getToken()))?.id
+  const empresaId = empresa.value?.id || empresaIdNotif.value || (await db.getEmpresaByToken(getToken()))?.id
   if (!empresaId) return
   try {
     await Promise.all([
@@ -317,10 +317,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-gray-50">
-    <header class="bg-white border-b sticky top-0 z-10">
+  <div class="min-h-dvh bg-gray-50 dark:bg-muted-950">
+    <header class="bg-white dark:bg-muted-900 border-b dark:border-muted-700 sticky top-0 z-10">
       <div class="max-w-4xl mx-auto px-4 py-3">
-        <h1 class="text-lg font-bold text-gray-900">{{ t('public.titulo') }}</h1>
+        <h1 class="text-lg font-bold text-gray-900 dark:text-muted-100">{{ t('public.titulo') }}</h1>
       </div>
     </header>
 
@@ -343,33 +343,33 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="error" class="text-center py-12">
-        <p class="text-red-600">{{ error }}</p>
+        <p class="text-red-600 dark:text-red-400">{{ error }}</p>
       </div>
 
       <template v-else-if="empresa || pessoaNome">
         <!-- Heading -->
         <template v-if="pessoaNome">
-          <p class="text-sm text-gray-500 mb-1">{{ empresaNome }}</p>
-          <h1 class="text-xl md:text-2xl font-bold mb-6">{{ pessoaNome }}</h1>
+          <p class="text-sm text-gray-500 dark:text-muted-400 mb-1">{{ empresaNome }}</p>
+          <h1 class="text-xl md:text-2xl font-bold mb-6 dark:text-muted-100">{{ pessoaNome }}</h1>
         </template>
-        <h1 v-else class="text-xl md:text-2xl font-bold mb-2">{{ empresa!.nome }}</h1>
+        <h1 v-else class="text-xl md:text-2xl font-bold mb-2 dark:text-muted-100">{{ empresa!.nome }}</h1>
 
         <!-- Search + Sort -->
         <div class="flex flex-col sm:flex-row gap-3 mb-4">
           <div class="relative flex-1">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-500">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
               v-model="busca"
               type="text"
               :placeholder="t('public.buscar')"
-              class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              class="w-full pl-9 pr-3 py-3 border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-100 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
             />
           </div>
           <select
             v-model="ordenacao"
-            class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700"
+            class="px-3 py-2.5 border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-200 rounded-lg text-sm bg-white text-gray-700"
           >
             <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
               {{ opt.label }}
@@ -392,7 +392,7 @@ onUnmounted(() => {
           <div v-if="isEmpresaMode && pessoas.length > 1" class="sm:ml-auto flex items-center gap-2">
             <select
               v-model="filtroPessoaId"
-              class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="todas">{{ t('public.todasPessoas') }}</option>
               <option v-for="p in pessoas" :key="p.id" :value="p.id">{{ p.nome }}</option>
@@ -404,13 +404,13 @@ onUnmounted(() => {
         <button
           v-if="isEmpresaMode || pessoas.length > 0"
           @click="showBottomSheet = true"
-          class="sm:hidden w-full mb-4 px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm text-gray-600 flex items-center gap-2 active:bg-gray-50"
+          class="sm:hidden w-full mb-4 px-4 py-2.5 bg-white dark:bg-muted-900 border border-gray-300 dark:border-muted-600 rounded-lg text-sm text-gray-600 dark:text-muted-400 flex items-center gap-2 active:bg-gray-50 dark:active:bg-gray-800"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
             <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
           </svg>
           <span class="flex-1 text-left">{{ t('public.filtros') }}</span>
-          <span class="text-xs text-gray-400">
+          <span class="text-xs text-gray-400 dark:text-muted-500">
             {{ filtroStatus !== 'todos' ? t('status.' + filtroStatus) : t('public.filtroStatus') }}
             <template v-if="filtroPriorizados || filtroPessoaId !== 'todas'">, +{{ [filtroPriorizados, filtroPessoaId !== 'todas'].filter(Boolean).length }}</template>
           </span>
@@ -418,29 +418,29 @@ onUnmounted(() => {
 
         <!-- Video list: accordion by person (empresa mode) -->
         <template v-if="isEmpresaMode">
-          <div v-if="videosPorPessoa.size === 0" class="text-center py-12 text-gray-400">
+          <div v-if="videosPorPessoa.size === 0" class="text-center py-12 text-gray-400 dark:text-muted-500">
             {{ t('public.nenhumVideo') }}
           </div>
           <div v-else class="space-y-4">
             <div
               v-for="[pessoaId, pessoaVideos] in videosPorPessoa"
               :key="pessoaId"
-              class="bg-white rounded-xl shadow-sm border overflow-hidden"
+              class="bg-white dark:bg-muted-900 rounded-xl shadow-sm dark:shadow-none border dark:border-muted-700 overflow-hidden"
             >
               <button
                 @click="togglePessoa(pessoaId)"
-                class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-muted-800 hover:bg-gray-100 dark:hover:bg-muted-700 transition-colors text-left"
               >
-                <span class="font-semibold text-gray-900">
+                <span class="font-semibold text-gray-900 dark:text-muted-100">
                   {{ pessoaVideos[0]?.pessoaNome || '—' }}
-                  <span class="text-sm font-normal text-gray-500 ml-2">({{ pessoaVideos.length }})</span>
+                  <span class="text-sm font-normal text-gray-500 dark:text-muted-400 ml-2">({{ pessoaVideos.length }})</span>
                 </span>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   stroke-width="2"
-                  class="w-4 h-4 text-gray-400 transition-transform duration-300"
+                  class="w-4 h-4 text-gray-400 dark:text-muted-500 transition-transform duration-300"
                   :class="{ 'rotate-180': pessoasExpandidas.has(pessoaId) }"
                 >
                   <polyline points="6 9 12 15 18 9"/>
@@ -475,7 +475,7 @@ onUnmounted(() => {
                               fill="none"
                               stroke="currentColor"
                               stroke-width="2"
-                              class="w-5 h-5 text-gray-300 hover:text-yellow-500 transition-colors"
+                    class="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-yellow-500 transition-colors"
                             >
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                             </svg>
@@ -487,12 +487,12 @@ onUnmounted(() => {
                           <CanalTags :canais="video.canais" />
                           <span
                             v-if="video.ads"
-                            class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium"
+                            class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs font-medium"
                           >
                             {{ t('public.ads') }}
                           </span>
                         </div>
-                        <p v-if="video.observacoes" class="text-sm text-gray-500 mt-2">
+                        <p v-if="video.observacoes" class="text-sm text-gray-500 dark:text-muted-400 mt-2">
                           {{ video.observacoes }}
                         </p>
 
@@ -500,7 +500,7 @@ onUnmounted(() => {
                         <div class="flex flex-col gap-2 mt-3">
                           <!-- Link Material Bruto -->
                           <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 font-medium shrink-0">{{ t('public.materialBruto') }}</span>
+                            <span class="text-xs text-gray-500 dark:text-muted-400 font-medium shrink-0">{{ t('public.materialBruto') }}</span>
                             <template v-if="editandoLink[video.id]">
                               <input
                                 :value="video.linkMaterialBruto"
@@ -508,7 +508,7 @@ onUnmounted(() => {
                                 @keydown.escape="cancelarEdicaoLink(video.id)"
                                 @blur="(e) => salvarLinkMaterialBruto(video, (e.target as HTMLInputElement).value)"
                                 type="url"
-                                class="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                class="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-100 rounded focus:outline-none focus:ring-1 focus:ring-primary-500"
                                 :placeholder="t('public.placeholderLink')"
                               />
                             </template>
@@ -518,15 +518,15 @@ onUnmounted(() => {
                                   v-if="video.linkMaterialBruto"
                                   :href="video.linkMaterialBruto"
                                   target="_blank"
-                                  class="text-xs text-blue-600 hover:underline truncate"
+                                  class="text-xs text-primary-700 dark:text-primary-200 hover:underline truncate"
                                 >
                                   {{ video.linkMaterialBruto }}
                                 </a>
-                                <span v-else class="text-xs text-gray-400 italic">{{ t('public.nenhumLink') }}</span>
+                                <span v-else class="text-xs text-gray-400 dark:text-muted-500 italic">{{ t('public.nenhumLink') }}</span>
                                 <button
                                   v-if="video.linkMaterialBruto"
                                   @click="copiarLink(video.id, video.linkMaterialBruto)"
-                                  class="shrink-0 text-gray-300 hover:text-blue-600 transition-colors p-1 -m-1"
+                                  class="shrink-0 text-gray-300 dark:text-gray-600 hover:text-primary-700 transition-colors p-2.5 -m-2.5"
                                   :title="copiedLinkId === video.id ? t('common.copied') : t('common.copyLink')"
                                 >
                                   <svg v-if="copiedLinkId === video.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-green-500">
@@ -538,7 +538,7 @@ onUnmounted(() => {
                                 </button>
                                 <button
                                   @click="iniciarEdicaoLink(video.id)"
-                                  class="shrink-0 text-gray-400 hover:text-blue-600 transition-colors p-1 -m-1"
+                                  class="shrink-0 text-gray-400 dark:text-muted-500 hover:text-primary-700 transition-colors p-2.5 -m-2.5"
                                   :title="t('public.editarLink')"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
@@ -552,18 +552,18 @@ onUnmounted(() => {
 
                           <!-- Link Video Final -->
                           <div v-if="video.linkVideoFinal" class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 font-medium shrink-0">{{ t('public.videoFinal') }}</span>
+                            <span class="text-xs text-gray-500 dark:text-muted-400 font-medium shrink-0">{{ t('public.videoFinal') }}</span>
                             <div class="flex items-center gap-1 min-w-0 flex-1 group">
                               <a
                                 :href="video.linkVideoFinal"
                                 target="_blank"
-                                class="text-xs text-green-600 hover:underline truncate"
+                                class="text-xs text-green-600 dark:text-green-400 hover:underline truncate"
                               >
                                 {{ video.linkVideoFinal }}
                               </a>
                               <button
                                 @click="copiarLink(video.id, video.linkVideoFinal)"
-                                class="shrink-0 text-gray-300 hover:text-green-600 transition-colors p-1 -m-1"
+                                class="shrink-0 text-gray-300 dark:text-gray-600 hover:text-green-600 transition-colors p-2.5 -m-2.5"
                                 :title="copiedLinkId === video.id ? t('common.copied') : t('common.copyLink')"
                               >
                                 <svg v-if="copiedLinkId === video.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-green-500">
@@ -577,9 +577,9 @@ onUnmounted(() => {
                           </div>
                         </div>
                       </div>
-                      <div v-if="video.dataPostagem" class="text-sm text-gray-400 shrink-0">
-                        {{ video.dataPostagem.toLocaleDateString() }}
-                      </div>
+                        <div v-if="video.dataPostagem" class="text-sm text-gray-400 dark:text-muted-500 shrink-0">
+                  {{ video.dataPostagem.toLocaleDateString() }}
+                </div>
                     </div>
                   </div>
                 </div>
@@ -590,14 +590,14 @@ onUnmounted(() => {
 
         <!-- Video list: flat (pessoa mode) -->
         <template v-else>
-          <div v-if="videosFiltrados.length === 0" class="text-center py-12 text-gray-400">
+          <div v-if="videosFiltrados.length === 0" class="text-center py-12 text-gray-400 dark:text-muted-500">
             {{ t('public.nenhumVideo') }}
           </div>
           <div v-else class="space-y-3">
             <div
               v-for="video in videosFiltrados"
               :key="video.id"
-              class="bg-white rounded-xl shadow-sm border p-4"
+              class="bg-white dark:bg-muted-900 rounded-xl shadow-sm dark:shadow-none border dark:border-muted-700 p-4"
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0 flex-1">
@@ -638,14 +638,14 @@ onUnmounted(() => {
                       {{ t('public.ads') }}
                     </span>
                   </div>
-                  <p v-if="video.observacoes" class="text-sm text-gray-500 mt-2">
+                  <p v-if="video.observacoes" class="text-sm text-gray-500 dark:text-muted-400 mt-2">
                     {{ video.observacoes }}
                   </p>
 
                   <!-- Drive links -->
                   <div class="flex flex-col gap-2 mt-3">
                     <div class="flex items-center gap-2">
-                      <span class="text-xs text-gray-500 font-medium shrink-0">{{ t('public.materialBruto') }}</span>
+                      <span class="text-xs text-gray-500 dark:text-muted-400 font-medium shrink-0">{{ t('public.materialBruto') }}</span>
                       <template v-if="editandoLink[video.id]">
                         <input
                           :value="video.linkMaterialBruto"
@@ -653,7 +653,7 @@ onUnmounted(() => {
                           @keydown.escape="cancelarEdicaoLink(video.id)"
                           @blur="(e) => salvarLinkMaterialBruto(video, (e.target as HTMLInputElement).value)"
                           type="url"
-                          class="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          class="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-100 rounded focus:outline-none focus:ring-1 focus:ring-primary-500"
                           :placeholder="t('public.placeholderLink')"
                         />
                       </template>
@@ -663,15 +663,15 @@ onUnmounted(() => {
                             v-if="video.linkMaterialBruto"
                             :href="video.linkMaterialBruto"
                             target="_blank"
-                            class="text-xs text-blue-600 hover:underline truncate"
+                            class="text-xs text-primary-700 dark:text-primary-200 hover:underline truncate"
                           >
                             {{ video.linkMaterialBruto }}
                           </a>
-                          <span v-else class="text-xs text-gray-400 italic">{{ t('public.nenhumLink') }}</span>
+                          <span v-else class="text-xs text-gray-400 dark:text-muted-500 italic">{{ t('public.nenhumLink') }}</span>
                           <button
                             v-if="video.linkMaterialBruto"
                             @click="copiarLink(video.id, video.linkMaterialBruto)"
-                            class="shrink-0 text-gray-300 hover:text-blue-600 transition-colors p-1 -m-1"
+                            class="shrink-0 text-gray-300 hover:text-primary-700 transition-colors p-2.5 -m-2.5"
                             :title="copiedLinkId === video.id ? t('common.copied') : t('common.copyLink')"
                           >
                             <svg v-if="copiedLinkId === video.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-green-500">
@@ -683,7 +683,7 @@ onUnmounted(() => {
                           </button>
                           <button
                             @click="iniciarEdicaoLink(video.id)"
-                            class="shrink-0 text-gray-400 hover:text-blue-600 transition-colors p-1 -m-1"
+                            class="shrink-0 text-gray-400 hover:text-primary-700 transition-colors p-2.5 -m-2.5"
                             :title="t('public.editarLink')"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
@@ -696,32 +696,32 @@ onUnmounted(() => {
                     </div>
 
                     <div v-if="video.linkVideoFinal" class="flex items-center gap-2">
-                      <span class="text-xs text-gray-500 font-medium shrink-0">{{ t('public.videoFinal') }}</span>
+                      <span class="text-xs text-gray-500 dark:text-muted-400 font-medium shrink-0">{{ t('public.videoFinal') }}</span>
                       <div class="flex items-center gap-1 min-w-0 flex-1 group">
                         <a
                           :href="video.linkVideoFinal"
                           target="_blank"
-                          class="text-xs text-green-600 hover:underline truncate"
+                          class="text-xs text-green-600 dark:text-green-400 hover:underline truncate"
                         >
                           {{ video.linkVideoFinal }}
                         </a>
                         <button
-                          @click="copiarLink(video.id, video.linkVideoFinal)"
-                          class="shrink-0 text-gray-300 hover:text-green-600 transition-colors p-1 -m-1"
-                          :title="copiedLinkId === video.id ? t('common.copied') : t('common.copyLink')"
-                        >
-                          <svg v-if="copiedLinkId === video.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-green-500">
-                            <polyline points="20 6 9 17 4 12"/>
-                          </svg>
-                          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                          </svg>
-                        </button>
+                        @click="copiarLink(video.id, video.linkVideoFinal)"
+                        class="shrink-0 text-gray-300 hover:text-green-600 transition-colors p-2.5 -m-2.5"
+                        :title="copiedLinkId === video.id ? t('common.copied') : t('common.copyLink')"
+                      >
+                        <svg v-if="copiedLinkId === video.id" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5 text-green-500">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3.5 h-3.5">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                        </svg>
+                      </button>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div v-if="video.dataPostagem" class="text-sm text-gray-400 shrink-0">
+                <div v-if="video.dataPostagem" class="text-sm text-gray-400 dark:text-muted-500 shrink-0">
                   {{ video.dataPostagem.toLocaleDateString() }}
                 </div>
               </div>
@@ -733,17 +733,17 @@ onUnmounted(() => {
 
     <!-- Bottom sheet backdrop -->
     <Transition name="backdrop">
-      <div v-if="showBottomSheet" class="fixed inset-0 bg-black/40 z-30 sm:hidden" @click="showBottomSheet = false" />
+      <div v-if="showBottomSheet" class="fixed inset-0 bg-black/40 dark:bg-black/60 z-30 sm:hidden" @click="showBottomSheet = false" />
     </Transition>
 
     <!-- Bottom sheet filter panel -->
     <Transition name="bottom-sheet">
-      <div v-if="showBottomSheet" class="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-xl shadow-xl sm:hidden max-h-[75vh] flex flex-col">
-        <div class="sticky top-0 bg-white border-b rounded-t-xl px-4 py-3 flex items-center justify-between">
-          <span class="font-semibold text-sm text-gray-900">{{ t('public.filtros') }}</span>
+      <div v-if="showBottomSheet" class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-muted-900 rounded-t-xl shadow-xl dark:shadow-none sm:hidden max-h-[75vh] flex flex-col">
+        <div class="sticky top-0 bg-white dark:bg-muted-900 border-b dark:border-muted-700 rounded-t-xl px-4 py-3 flex items-center justify-between">
+          <span class="font-semibold text-sm text-gray-900 dark:text-muted-100">{{ t('public.filtros') }}</span>
           <button
             @click="showBottomSheet = false"
-            class="text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2"
+            class="text-gray-400 dark:text-muted-500 hover:text-gray-600 dark:hover:text-muted-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -mr-2"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-5 h-5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -752,7 +752,7 @@ onUnmounted(() => {
         </div>
         <div class="overflow-y-auto p-4 space-y-5">
           <div>
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">{{ t('public.filtroStatus') }}</label>
+            <label class="block text-xs font-medium text-gray-500 dark:text-muted-400 uppercase tracking-wider mb-2">{{ t('public.filtroStatus') }}</label>
           <div class="flex overflow-x-auto gap-2 pb-1 scrollbar-hide">
               <StatusFilter
                 :selected="filtroStatus"
@@ -765,26 +765,26 @@ onUnmounted(() => {
             </div>
           </div>
           <div v-if="isEmpresaMode && pessoas.length > 1">
-            <hr class="border-gray-100 mb-5">
+            <hr class="border-gray-100 dark:border-muted-700 mb-5">
             <select
               v-model="filtroPessoaId"
-              class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-muted-600 dark:bg-muted-800 dark:text-muted-200 text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="todas">{{ t('public.todasPessoas') }}</option>
               <option v-for="p in pessoas" :key="p.id" :value="p.id">{{ p.nome }}</option>
             </select>
           </div>
-          <hr class="border-gray-100">
+          <hr class="border-gray-100 dark:border-muted-700">
           <div class="flex items-center gap-3">
             <button
               @click="limparFiltros()"
-              class="flex-1 py-2.5 rounded-lg text-sm font-medium border border-gray-300 text-gray-600 active:bg-gray-50"
+              class="flex-1 py-2.5 rounded-lg text-sm font-medium border border-gray-300 dark:border-muted-600 text-gray-600 dark:text-muted-300 active:bg-gray-50 dark:active:bg-gray-800"
             >
               {{ t('public.limpar') }}
             </button>
             <button
               @click="showBottomSheet = false"
-              class="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium active:bg-blue-700"
+              class="flex-1 py-2.5 bg-primary-700 text-white rounded-lg text-sm font-medium active:bg-primary-700"
             >
               {{ t('public.aplicar') }}
             </button>

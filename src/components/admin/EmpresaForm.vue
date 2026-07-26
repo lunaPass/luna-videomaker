@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { LOCALE_OPTIONS } from '@/locales'
 import type { Empresa, EmpresaFormData } from '@/types/empresa'
 import type { Locale } from '@/locales'
+import AppModal from '@/components/ui/AppModal.vue'
 
 const { t } = useI18n()
 
@@ -36,50 +37,48 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="emit('close')">
-    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
-      <h2 class="text-lg font-bold mb-4">{{ empresa ? t('empresas.editarEmpresa') : t('empresas.novaEmpresa') }}</h2>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresas.th.nome') }}</label>
-          <input
-            v-model="nome"
-            type="text"
-            required
-            autofocus
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Ex: English School"
-          />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('empresas.th.idioma') }}</label>
-          <select
-            v-model="locale"
-            required
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">
-              {{ opt.flag }} {{ opt.label }}
-            </option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3">
-          <button
-            type="button"
-            @click="emit('close')"
-            class="px-4 py-2 text-gray-600 hover:text-gray-800"
-          >
-            {{ t('common.cancel') }}
-          </button>
-          <button
-            type="submit"
-            :disabled="loading"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {{ loading ? t('common.saving') : t('common.save') }}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <AppModal :show="true" :title="empresa ? t('empresas.editarEmpresa') : t('empresas.novaEmpresa')" @close="emit('close')">
+    <form @submit.prevent="handleSubmit" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('empresas.th.nome') }}</label>
+        <input
+          v-model="nome"
+          type="text"
+          required
+          autofocus
+          class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+          placeholder="Ex: English School"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('empresas.th.idioma') }}</label>
+        <select
+          v-model="locale"
+          required
+          class="w-full border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">
+            {{ opt.flag }} {{ opt.label }}
+          </option>
+        </select>
+      </div>
+    </form>
+    <template #footer>
+      <button
+        type="button"
+        @click="emit('close')"
+        class="px-4 py-3 text-foreground-secondary hover:text-foreground text-sm"
+      >
+        {{ t('common.cancel') }}
+      </button>
+      <button
+        type="submit"
+        :disabled="loading"
+        class="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors text-sm"
+        @click="handleSubmit"
+      >
+        {{ loading ? t('common.saving') : t('common.save') }}
+      </button>
+    </template>
+  </AppModal>
 </template>

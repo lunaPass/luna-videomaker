@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { Video, VideoFormData, VideoStatus, Moeda } from '@/types/video'
 import { VIDEO_STATUS_ORDER, MOEDA_SIMBOLO } from '@/types/video'
 import * as db from '@/firebase/db'
+import AppModal from '@/components/ui/AppModal.vue'
 
 const { t } = useI18n()
 
@@ -79,27 +80,25 @@ function handleSubmit() {
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="emit('close')">
-    <div class="bg-white rounded-xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-      <h2 class="text-lg font-bold mb-4">{{ video ? t('videoForm.editar') : t('videoForm.novo') }}</h2>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+  <AppModal :show="true" :title="video ? t('videoForm.editar') : t('videoForm.novo')" max-width="lg" @close="emit('close')">
+    <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.titulo') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.titulo') }}</label>
           <input
             v-model="titulo"
             type="text"
             required
             autofocus
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
             :placeholder="t('videoForm.placeholderTitulo')"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.status') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.status') }}</label>
           <select
             v-model="status"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option v-for="s in VIDEO_STATUS_ORDER" :key="s" :value="s">
               {{ t('status.' + s) }}
@@ -108,22 +107,22 @@ function handleSubmit() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.dataPostagem') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.dataPostagem') }}</label>
           <input
             v-model="dataPostagem"
             type="date"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">{{ t('videoForm.canais') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-2">{{ t('videoForm.canais') }}</label>
           <div class="flex flex-wrap gap-2">
             <label
               v-for="canal in canaisDisponiveis"
               :key="canal"
-              class="flex items-center gap-2 px-3 py-1.5 border rounded-lg cursor-pointer hover:bg-gray-50"
-              :class="{ 'bg-blue-50 border-blue-300': canais.includes(canal) }"
+              class="flex items-center gap-2 px-3 py-2 border border-border rounded-lg cursor-pointer hover:bg-surface-muted text-foreground-secondary"
+              :class="{ 'bg-primary-soft border-primary': canais.includes(canal) }"
             >
               <input
                 type="checkbox"
@@ -143,7 +142,7 @@ function handleSubmit() {
             id="ads-check"
             class="rounded"
           />
-          <label for="ads-check" class="text-sm font-medium text-gray-700">{{ t('videoForm.paraAds') }}</label>
+          <label for="ads-check" class="text-sm font-medium text-foreground-secondary">{{ t('videoForm.paraAds') }}</label>
         </div>
 
         <div class="flex items-center gap-2">
@@ -153,7 +152,7 @@ function handleSubmit() {
             id="priorizado-check"
             class="rounded"
           />
-          <label for="priorizado-check" class="text-sm font-medium text-gray-700">
+          <label for="priorizado-check" class="text-sm font-medium text-foreground-secondary">
             {{ t('videoForm.priorizado') }}
             <span class="text-yellow-500 ml-1">★</span>
           </label>
@@ -161,21 +160,21 @@ function handleSubmit() {
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.valor') }}</label>
+            <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.valor') }}</label>
             <input
               v-model.number="valor"
               type="number"
               step="0.01"
               min="0"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="0,00"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.moeda') }}</label>
+            <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.moeda') }}</label>
             <select
               v-model="moeda"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option v-for="m in (['BRL', 'USD', 'EUR'] as Moeda[])" :key="m" :value="m">
                 {{ MOEDA_SIMBOLO[m] }} {{ m }}
@@ -185,31 +184,31 @@ function handleSubmit() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.observacoes') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.observacoes') }}</label>
           <textarea
             v-model="observacoes"
             rows="3"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
             :placeholder="t('videoForm.placeholderObservacoes')"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.linkMaterialBruto') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.linkMaterialBruto') }}</label>
           <input
             v-model="linkMaterialBruto"
             type="url"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
             :placeholder="t('videoForm.placeholderDrive')"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('videoForm.linkVideoFinal') }}</label>
+          <label class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('videoForm.linkVideoFinal') }}</label>
           <input
             v-model="linkVideoFinal"
             type="url"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
             :placeholder="t('videoForm.placeholderDrive')"
           />
         </div>
@@ -218,19 +217,18 @@ function handleSubmit() {
           <button
             type="button"
             @click="emit('close')"
-            class="px-4 py-2 text-gray-600 hover:text-gray-800"
+            class="px-4 py-3 text-foreground-secondary hover:text-foreground text-sm"
           >
             {{ t('common.cancel') }}
           </button>
           <button
             type="submit"
             :disabled="loading || saving"
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            class="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors text-sm"
           >
             {{ loading || saving ? t('common.saving') : t('common.save') }}
           </button>
         </div>
       </form>
-    </div>
-  </div>
+  </AppModal>
 </template>

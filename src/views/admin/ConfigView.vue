@@ -4,6 +4,8 @@ const { t } = useI18n()
 import { ref, onMounted } from 'vue'
 import * as db from '@/firebase/db'
 import { useCotacao } from '@/composables/useCotacao'
+import { useTour } from '@/composables/useTour'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const canais = ref<string[]>([])
 const novoCanal = ref('')
@@ -68,7 +70,7 @@ onMounted(carregar)
   <div>
     <h1 class="text-2xl font-bold mb-6">{{ t('config.titulo') }}</h1>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 max-w-lg mb-6">
+    <div class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-6 max-w-lg mb-6">
       <h2 class="text-lg font-semibold mb-4">{{ t('config.canaisRedeSocial') }}</h2>
 
       <div class="flex gap-2 mb-4">
@@ -76,12 +78,12 @@ onMounted(carregar)
           v-model="novoCanal"
           type="text"
           :placeholder="t('config.novoCanal')"
-          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="flex-1 border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
           @keyup.enter="adicionarCanal"
         />
         <button
           @click="adicionarCanal"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-primary-hover"
         >
           {{ t('config.adicionar') }}
         </button>
@@ -91,9 +93,9 @@ onMounted(carregar)
         <div
           v-for="canal in canais"
           :key="canal"
-          class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2"
+          class="flex items-center justify-between bg-surface-muted rounded-lg px-3 py-2"
         >
-          <span>{{ canal }}</span>
+          <span class="text-foreground-secondary">{{ canal }}</span>
           <button
             @click="removerCanal(canal)"
             class="text-red-500 hover:text-red-700 text-sm"
@@ -101,34 +103,34 @@ onMounted(carregar)
             {{ t('config.remover') }}
           </button>
         </div>
-        <p v-if="canais.length === 0" class="text-gray-400 text-sm">{{ t('config.nenhumCanal') }}</p>
+        <EmptyState v-if="canais.length === 0" :message="t('config.nenhumCanal')" />
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border p-6 max-w-lg">
+    <div class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-6 max-w-lg">
       <h2 class="text-lg font-semibold mb-4">{{ t('config.taxasCambio') }}</h2>
 
       <div class="space-y-4 mb-4">
         <div>
-          <label for="usd-input" class="block text-sm font-medium text-gray-700 mb-1">{{ t('config.usdParaBrl') }}</label>
+          <label for="usd-input" class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('config.usdParaBrl') }}</label>
           <input
             id="usd-input"
             v-model.number="usdToBrl"
             type="number"
             step="0.01"
             min="0"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div>
-          <label for="eur-input" class="block text-sm font-medium text-gray-700 mb-1">{{ t('config.eurParaBrl') }}</label>
+          <label for="eur-input" class="block text-sm font-medium text-foreground-secondary mb-1">{{ t('config.eurParaBrl') }}</label>
           <input
             id="eur-input"
             v-model.number="eurToBrl"
             type="number"
             step="0.01"
             min="0"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full border border-border bg-surface text-foreground rounded-lg px-3 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
       </div>
@@ -137,21 +139,31 @@ onMounted(carregar)
         <button
           @click="salvarTaxas"
           :disabled="saving"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-primary-hover disabled:opacity-50"
         >
           {{ t('config.salvarTaxas') }}
         </button>
         <button
           @click="buscarCotacao"
           :disabled="cotacaoLoading"
-          class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+          class="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 disabled:opacity-50"
         >
           {{ cotacaoLoading ? t('config.buscando') : t('config.buscarCotacao') }}
         </button>
       </div>
 
-      <p v-if="cotacaoMsg" class="text-sm text-gray-600 mt-3">{{ cotacaoMsg }}</p>
-      <p v-if="saving" class="text-sm text-gray-500 mt-2">{{ t('common.saving') }}</p>
+      <p v-if="cotacaoMsg" class="text-sm text-foreground-secondary mt-3">{{ cotacaoMsg }}</p>
+      <p v-if="saving" class="text-sm text-foreground-muted mt-2">{{ t('common.saving') }}</p>
+    </div>
+
+    <div class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-6 max-w-lg mt-6">
+      <h2 class="text-lg font-semibold mb-4">{{ t('tour.heading') }}</h2>
+      <button
+        @click="useTour().reset(); useTour().start()"
+        class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-primary-hover"
+      >
+        {{ t('tour.reiniciar') }}
+      </button>
     </div>
   </div>
 </template>

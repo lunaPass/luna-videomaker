@@ -45,8 +45,9 @@ service cloud.firestore {
         && request.resource.data.criadoEm is timestamp;
 
       allow update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['nome'])
-        && isValidString(request.resource.data.nome, 1, 100);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome', 'locale'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['nome']) || isValidString(request.resource.data.nome, 1, 100))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['locale']) || request.resource.data.locale in ['pt-BR', 'en', 'es']);
 
       allow delete: if isAdmin();
 
@@ -64,8 +65,8 @@ service cloud.firestore {
           && request.resource.data.criadoEm is timestamp;
 
         allow update: if isAdmin()
-          && request.resource.data.keys().hasOnly(['nome'])
-          && isValidString(request.resource.data.nome, 1, 100);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nome'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['nome']) || isValidString(request.resource.data.nome, 1, 100));
 
         allow delete: if isAdmin();
 
@@ -90,24 +91,36 @@ service cloud.firestore {
             && isValidString(request.resource.data.linkVideoFinal, 0, 2048);
 
           allow update: if (isAdmin()
-            && request.resource.data.keys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem', 'priorizado', 'linkMaterialBruto', 'linkVideoFinal', 'atualizadoEm', 'valor', 'moeda'])
-            && (!request.resource.data.keys().hasAny(['atualizadoEm']) || request.resource.data.atualizadoEm is timestamp)
-            && (!request.resource.data.keys().hasAny(['titulo']) || isValidString(request.resource.data.titulo, 1, 200))
-            && (!request.resource.data.keys().hasAny(['status']) || request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado'])
-            && (!request.resource.data.keys().hasAny(['canais']) || isValidCanais(request.resource.data.canais))
-            && (!request.resource.data.keys().hasAny(['ads']) || request.resource.data.ads is bool)
-            && (!request.resource.data.keys().hasAny(['observacoes']) || isValidString(request.resource.data.observacoes, 0, 2000))
-            && (!request.resource.data.keys().hasAny(['dataPostagem']) || request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
-            && (!request.resource.data.keys().hasAny(['ordem']) || request.resource.data.ordem is number)
-            && (!request.resource.data.keys().hasAny(['priorizado']) || request.resource.data.priorizado is bool)
-            && (!request.resource.data.keys().hasAny(['linkMaterialBruto']) || isValidString(request.resource.data.linkMaterialBruto, 0, 2048))
-            && (!request.resource.data.keys().hasAny(['linkVideoFinal']) || isValidString(request.resource.data.linkVideoFinal, 0, 2048)))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['titulo', 'status', 'canais', 'ads', 'observacoes', 'dataPostagem', 'ordem', 'priorizado', 'linkMaterialBruto', 'linkVideoFinal', 'atualizadoEm', 'valor', 'moeda', 'criadoEm'])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['atualizadoEm']) || request.resource.data.atualizadoEm is timestamp)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['titulo']) || isValidString(request.resource.data.titulo, 1, 200))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']) || request.resource.data.status in ['gravado', 'editando', 'revisao', 'postado'])
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['canais']) || isValidCanais(request.resource.data.canais))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['ads']) || request.resource.data.ads is bool)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['observacoes']) || isValidString(request.resource.data.observacoes, 0, 2000))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataPostagem']) || request.resource.data.dataPostagem is timestamp || request.resource.data.dataPostagem == null)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['ordem']) || request.resource.data.ordem is number)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['priorizado']) || request.resource.data.priorizado is bool)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['linkMaterialBruto']) || isValidString(request.resource.data.linkMaterialBruto, 0, 2048))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['linkVideoFinal']) || isValidString(request.resource.data.linkVideoFinal, 0, 2048)))
           ||
           // Public: visitor with valid empresa token can toggle priorizado and set linkMaterialBruto
-          (request.resource.data.keys().hasOnly(['priorizado', 'linkMaterialBruto', '_token'])
+          // Note: hasOnly cannot be used here because request.resource.data is the FULL merged document
+          (empresaToken(empresaId) == request.resource.data._token
             && request.resource.data.priorizado is bool
-            && isValidString(request.resource.data.linkMaterialBruto, 0, 2048)
-            && empresaToken(empresaId) == request.resource.data._token);
+            && (!request.resource.data.keys().hasAny(['linkMaterialBruto']) || isValidString(request.resource.data.linkMaterialBruto, 0, 2048))
+            && request.resource.data.titulo == resource.data.titulo
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.ordem == resource.data.ordem
+            && request.resource.data.canais == resource.data.canais
+            && request.resource.data.ads == resource.data.ads
+            && request.resource.data.observacoes == resource.data.observacoes
+            && request.resource.data.linkVideoFinal == resource.data.linkVideoFinal
+            && request.resource.data.criadoEm == resource.data.criadoEm
+            && request.resource.data.atualizadoEm == resource.data.atualizadoEm
+            && request.resource.data.valor == resource.data.valor
+            && request.resource.data.moeda == resource.data.moeda
+            && request.resource.data.dataPostagem == resource.data.dataPostagem);
           allow delete: if isAdmin();
         }
 
@@ -115,7 +128,7 @@ service cloud.firestore {
         // Notificacoes da pessoa (cliente) — admin cria, contratante lê
         // ===============================================================
         match /notificacoes/{notificacaoId} {
-          allow read, delete: if true;
+          allow read, update, delete: if true;
           allow create: if isAdmin();
         }
       }

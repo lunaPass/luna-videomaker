@@ -8,6 +8,13 @@ import * as db from '@/firebase/db'
 import StatusBadge from '@/components/admin/StatusBadge.vue'
 import CanalTags from '@/components/admin/CanalTags.vue'
 import VideoForm from '@/components/admin/VideoForm.vue'
+import QuickCreateModal from '@/components/admin/QuickCreateModal.vue'
+import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import Pagination from '@/components/ui/Pagination.vue'
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
 
 type VideoComNome = Video & { pessoaNome: string; empresaNome: string }
 
@@ -33,6 +40,7 @@ const busca = ref('')
 let buscaTimer: ReturnType<typeof setTimeout> | null = null
 const currentPage = ref(1)
 const pageSize = 20
+const showQuickCreate = ref(false)
 
 const totalPages = computed(() => Math.ceil(filtered.value.length / pageSize))
 
@@ -72,8 +80,8 @@ async function listar() {
     usdToBrl.value = config.usdToBrl
     eurToBrl.value = config.eurToBrl
     aplicarFiltro()
-  } catch {
-    // Silently fail
+  } catch (e) {
+    console.error('Erro ao carregar videos:', e)
   } finally {
     loading.value = false
   }
@@ -181,42 +189,16 @@ onMounted(async () => {
 
 <template>
   <div>
-    <!-- Skeleton shimmer -->
-    <div v-if="loading" class="animate-pulse space-y-6">
-      <div class="h-8 w-48 skeleton-pulse" />
-      <div class="flex gap-3">
-        <div class="flex-1 h-10 skeleton-pulse rounded-lg" />
-        <div class="w-40 h-10 skeleton-pulse rounded-lg" />
-        <div class="w-48 h-10 skeleton-pulse rounded-lg" />
-      </div>
-      <div class="hidden md:block space-y-3">
-        <div v-for="i in 6" :key="i" class="h-14 skeleton-pulse" />
-      </div>
-      <div class="md:hidden space-y-3">
-        <div v-for="i in 3" :key="i" class="h-32 skeleton-pulse" />
-      </div>
-    </div>
-
-    <template v-else>
+    <LoadingSkeleton :loading="loading" type="table" :rows="6">
 
     <h1 class="text-xl md:text-2xl font-bold mb-6">{{ t('videos.title') }}</h1>
 
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
-      <div class="relative flex-1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input
-          v-model="busca"
-          type="text"
-          :placeholder="t('videos.buscar')"
-          class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        />
-      </div>
+      <SearchInput v-model="busca" :placeholder="t('videos.buscar')" />
       <select
         v-model="filterStatus"
         @change="aplicarFiltro"
-        class="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm"
       >
         <option value="">{{ t('videos.todosStatus') }}</option>
         <option v-for="s in statusOptions" :key="s" :value="s">
@@ -227,7 +209,7 @@ onMounted(async () => {
       <select
         v-model="filterEmpresa"
         @change="aplicarFiltro"
-        class="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm"
       >
         <option value="">{{ t('videos.todasEmpresas') }}</option>
         <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">
@@ -236,22 +218,27 @@ onMounted(async () => {
       </select>
 
       <button
+        @click="showQuickCreate = true"
+        class="px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium whitespace-nowrap"
+      >
+        {{ t('pessoaDetail.novoVideo') }}
+      </button>
+
+      <button
         v-if="filterStatus || filterEmpresa || busca"
         @click="limparFiltro"
-        class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2.5"
+        class="text-sm text-foreground-muted hover:text-foreground-secondary px-3 py-2.5"
       >
         {{ t('videos.limparFiltros') }}
       </button>
     </div>
 
-    <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-      {{ errorMessage }}
-    </div>
+    <ErrorMessage :message="errorMessage" />
 
     <!-- Desktop table -->
-    <div class="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="hidden md:block bg-surface rounded-xl shadow-sm dark:shadow-none border border-border overflow-hidden">
       <table class="w-full">
-        <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+        <thead class="bg-surface-muted text-left text-sm font-medium text-foreground-muted">
           <tr>
             <th class="px-4 py-3 w-8"></th>
             <th class="px-4 py-3">{{ t('videos.th.titulo') }}</th>
@@ -264,7 +251,7 @@ onMounted(async () => {
           </tr>
         </thead>
         <tbody class="divide-y">
-          <tr v-for="video in paginatedVideos" :key="video.id" class="hover:bg-gray-50">
+          <tr v-for="video in paginatedVideos" :key="video.id" class="hover:bg-surface-muted">
             <td class="px-4 py-3">
               <span v-if="video.priorizado" class="text-yellow-500" :title="t('videos.priorizado')">
                 <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
@@ -275,24 +262,24 @@ onMounted(async () => {
             <td class="px-4 py-3 font-medium max-w-xs truncate">{{ video.titulo }}</td>
             <td class="px-4 py-3"><StatusBadge :status="video.status" /></td>
             <td class="px-4 py-3"><CanalTags :canais="video.canais" /></td>
-            <td class="px-4 py-3 text-sm text-gray-500">
+            <td class="px-4 py-3 text-sm text-foreground-muted">
               {{ video.dataPostagem?.toLocaleDateString() || '—' }}
             </td>
             <td class="px-4 py-3 text-xs">
               <div class="flex flex-col gap-0.5">
-                <a v-if="video.linkMaterialBruto" :href="video.linkMaterialBruto" target="_blank" class="text-blue-600 hover:underline">{{ t('videos.bruto') }}</a>
+                <a v-if="video.linkMaterialBruto" :href="video.linkMaterialBruto" target="_blank" class="text-primary hover:underline">{{ t('videos.bruto') }}</a>
                 <a v-if="video.linkVideoFinal" :href="video.linkVideoFinal" target="_blank" class="text-green-600 hover:underline">{{ t('videos.final') }}</a>
                 <span v-if="!video.linkMaterialBruto && !video.linkVideoFinal" class="text-gray-400">—</span>
               </div>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+            <td class="px-4 py-3 text-sm text-foreground-secondary whitespace-nowrap">
               {{ formatarValor(video) }}
             </td>
             <td class="px-4 py-3">
               <div class="flex gap-1">
                 <button
                   @click="abrirEdicao(video)"
-                  class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  class="p-1.5 text-muted hover:text-primary hover:bg-primary-soft rounded-lg transition-colors"
                   :aria-label="t('videos.editar')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -302,7 +289,7 @@ onMounted(async () => {
                 </button>
                 <button
                   @click="deletingVideo = video"
-                  class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  class="p-1.5 text-muted hover:text-destructive hover:bg-destructive-soft rounded-lg transition-colors"
                   :aria-label="t('videos.excluir')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -316,13 +303,13 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="filtered.length === 0">
-            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
-              {{ t('videos.nenhumVideo') }}
+            <td colspan="8">
+              <EmptyState :message="t('videos.nenhumVideo')" />
             </td>
           </tr>
           <tr v-if="filtered.length > 0 && paginatedVideos.length === 0">
-            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
-              {{ t('videos.nenhumaPagina') }}
+            <td colspan="8">
+              <EmptyState :message="t('videos.nenhumaPagina')" />
             </td>
           </tr>
         </tbody>
@@ -334,7 +321,7 @@ onMounted(async () => {
       <div
         v-for="video in paginatedVideos"
         :key="video.id"
-        class="bg-white rounded-xl shadow-sm border p-4"
+        class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-4"
       >
         <div class="flex items-center gap-1.5">
           <span v-if="video.priorizado" class="text-yellow-500 shrink-0" :title="t('videos.priorizado')">
@@ -342,11 +329,11 @@ onMounted(async () => {
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
           </span>
-          <div class="font-medium text-gray-900 flex-1">{{ video.titulo }}</div>
+          <div class="font-medium text-foreground flex-1">{{ video.titulo }}</div>
           <div class="flex gap-1 shrink-0">
             <button
               @click="abrirEdicao(video)"
-              class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              class="p-1.5 text-muted hover:text-primary hover:bg-primary-soft rounded-lg transition-colors"
               :aria-label="t('videos.editar')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -356,7 +343,7 @@ onMounted(async () => {
             </button>
             <button
               @click="deletingVideo = video"
-              class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              class="p-1.5 text-muted hover:text-destructive hover:bg-destructive-soft rounded-lg transition-colors"
               :aria-label="t('videos.excluir')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -371,54 +358,23 @@ onMounted(async () => {
         <div class="flex flex-wrap items-center gap-2 mt-2">
           <StatusBadge :status="video.status" />
           <CanalTags :canais="video.canais" />
-          <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">{{ t('videos.ads') }}</span>
+          <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs font-medium">{{ t('videos.ads') }}</span>
         </div>
         <div class="flex flex-wrap gap-2 mt-1.5">
-          <a v-if="video.linkMaterialBruto" :href="video.linkMaterialBruto" target="_blank" class="text-xs text-blue-600 hover:underline">{{ t('videos.materialBruto') }}</a>
+          <a v-if="video.linkMaterialBruto" :href="video.linkMaterialBruto" target="_blank" class="text-xs text-primary hover:underline">{{ t('videos.materialBruto') }}</a>
           <a v-if="video.linkVideoFinal" :href="video.linkVideoFinal" target="_blank" class="text-xs text-green-600 hover:underline">{{ t('videos.videoFinal') }}</a>
         </div>
-        <div v-if="video.dataPostagem" class="text-sm text-gray-400 mt-2">
+        <div v-if="video.dataPostagem" class="text-sm text-muted mt-2">
           {{ video.dataPostagem.toLocaleDateString() }}
         </div>
-        <div v-if="video.valor" class="text-sm font-medium text-gray-800 mt-1">
+        <div v-if="video.valor" class="text-sm font-medium text-foreground mt-1">
           {{ formatarValor(video) }}
         </div>
       </div>
-      <p v-if="filtered.length === 0" class="text-gray-400 text-center py-8">
-        {{ t('videos.nenhumVideo') }}
-      </p>
+      <EmptyState v-if="filtered.length === 0" :message="t('videos.nenhumVideo')" />
     </div>
 
-    <!-- Paginação -->
-    <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-6">
-      <button
-        @click="setPage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-      >
-        {{ t('videos.anterior') }}
-      </button>
-      <button
-        v-for="p in totalPages"
-        :key="p"
-        @click="setPage(p)"
-        :class="[
-          'px-3 py-1.5 text-sm rounded-lg border transition-colors min-w-[36px]',
-          p === currentPage
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'border-gray-300 hover:bg-gray-50'
-        ]"
-      >
-        {{ p }}
-      </button>
-      <button
-        @click="setPage(currentPage + 1)"
-        :disabled="currentPage === totalPages"
-        class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-      >
-        {{ t('videos.proximo') }}
-      </button>
-    </div>
+    <Pagination :current-page="currentPage" :total-pages="totalPages" @page-change="setPage" />
 
     <!-- Edit modal -->
     <VideoForm
@@ -429,33 +385,15 @@ onMounted(async () => {
       @close="editingVideo = null"
     />
 
-    <!-- Delete confirmation modal -->
-    <div
-      v-if="deletingVideo"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      @click.self="deletingVideo = null"
-    >
-      <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-        <h2 class="text-lg font-bold mb-2">{{ t('videos.modalTitulo') }}</h2>
-        <p class="text-sm text-gray-600 mb-6">
-          {{ t('videos.confirmarExclusao') }} <strong>{{ deletingVideo.titulo }}</strong>?
-        </p>
-        <div class="flex justify-end gap-3">
-          <button
-            @click="deletingVideo = null"
-            class="px-4 py-2 text-gray-600 hover:text-gray-800"
-          >
-            {{ t('common.cancel') }}
-          </button>
-          <button
-            @click="confirmarExcluir"
-            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            {{ t('common.excluir') }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </template>
+    <QuickCreateModal :show="showQuickCreate" @close="showQuickCreate = false" />
+
+    <ConfirmDeleteModal
+      :show="!!deletingVideo"
+      :item-name="deletingVideo?.titulo || ''"
+      item-type="video"
+      @confirm="confirmarExcluir"
+      @cancel="deletingVideo = null"
+    />
+  </LoadingSkeleton>
 </div>
 </template>

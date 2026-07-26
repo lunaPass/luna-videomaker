@@ -14,6 +14,9 @@ import { VueDraggable } from 'vue-draggable-plus'
 import XlsxExportButton from '@/components/admin/XlsxExportButton.vue'
 import XlsxImportButton from '@/components/admin/XlsxImportButton.vue'
 import type { VideoFormData } from '@/types/video'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -41,8 +44,8 @@ async function carregar() {
     }
 
     videos.value = await db.listarVideos(empresaId, pessoaId)
-  } catch {
-    // Silently fail
+  } catch (e) {
+    console.error('Erro ao carregar pessoa/videos:', e)
   } finally {
     loading.value = false
   }
@@ -126,15 +129,8 @@ onMounted(carregar)
 </script>
 
 <template>
-  <!-- Skeleton shimmer -->
-  <div v-if="loading" class="animate-pulse space-y-6">
-    <div class="h-4 w-48 skeleton-pulse mb-2" />
-    <div class="h-8 w-64 skeleton-pulse mb-6" />
-
-    <div v-for="i in 5" :key="i" class="h-20 skeleton-pulse" />
-  </div>
-
-  <div v-else-if="empresa && pessoa">
+  <LoadingSkeleton :loading="loading" type="cards" :rows="5">
+  <div v-if="empresa && pessoa">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
         <button
@@ -161,14 +157,10 @@ onMounted(carregar)
       </div>
     </div>
 
-    <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-      {{ errorMessage }}
-    </div>
+    <ErrorMessage :message="errorMessage" />
 
-    <div class="bg-white rounded-xl shadow-sm border">
-      <div v-if="videos.length === 0" class="p-8 text-center text-gray-400">
-        {{ t('pessoaDetail.nenhumVideo') }}
-      </div>
+    <div class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border">
+      <EmptyState v-if="videos.length === 0" :message="t('pessoaDetail.nenhumVideo')" />
 
       <VueDraggable
         v-else
@@ -181,9 +173,9 @@ onMounted(carregar)
         <div
           v-for="video in videos"
           :key="video.id"
-          class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+          class="flex items-center gap-3 px-4 py-3 hover:bg-surface-muted transition-colors"
         >
-          <span class="drag-handle cursor-grab text-gray-400 px-1 select-none">
+          <span class="drag-handle cursor-grab text-muted px-1 select-none">
             <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
               <circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/>
               <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
@@ -203,10 +195,10 @@ onMounted(carregar)
             <div class="flex flex-wrap items-center gap-2 mt-1">
               <StatusBadge :status="video.status" />
               <CanalTags :canais="video.canais" />
-              <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs font-medium">
+              <span v-if="video.ads" class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded text-xs font-medium">
                 Ads
               </span>
-              <span v-if="video.dataPostagem" class="text-xs text-gray-400">
+              <span v-if="video.dataPostagem" class="text-xs text-muted">
                 {{ video.dataPostagem.toLocaleDateString() }}
               </span>
             </div>
@@ -215,7 +207,7 @@ onMounted(carregar)
                 v-if="video.linkMaterialBruto"
                 :href="video.linkMaterialBruto"
                 target="_blank"
-                class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                class="inline-flex items-center gap-1 text-xs text-primary hover:text-primary-hover"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-3 h-3">
                   <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
@@ -239,7 +231,7 @@ onMounted(carregar)
           <div class="flex gap-1 shrink-0">
             <button
               @click="editingVideo = video"
-              class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              class="p-2 text-muted hover:text-primary hover:bg-primary-soft rounded-lg transition-colors"
               :aria-label="t('pessoaDetail.editarVideo')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -249,7 +241,7 @@ onMounted(carregar)
             </button>
             <button
               @click="excluirVideo(video.id)"
-              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              class="p-2 text-muted hover:text-destructive hover:bg-destructive-soft rounded-lg transition-colors"
               :aria-label="t('pessoaDetail.excluirVideo')"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
@@ -274,4 +266,5 @@ onMounted(carregar)
       @close="editingVideo = null"
     />
   </div>
+  </LoadingSkeleton>
 </template>

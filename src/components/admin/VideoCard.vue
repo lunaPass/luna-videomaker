@@ -1,8 +1,8 @@
 <template>
-  <div class="p-3 bg-white rounded shadow">
-    <h4 class="font-semibold">{{ video.titulo }}</h4>
+  <div class="p-3 bg-surface rounded shadow dark:shadow-none">
+    <h4 class="font-semibold text-foreground">{{ video.titulo }}</h4>
     <StatusBadge :status="video.status" />
-    <p v-if="video.canais.length" class="text-sm text-gray-500 mt-1">{{ video.canais.join(', ') }}</p>
+    <p v-if="video.canais.length" class="text-sm text-foreground-muted mt-1">{{ video.canais.join(', ') }}</p>
   </div>
 </template>
 

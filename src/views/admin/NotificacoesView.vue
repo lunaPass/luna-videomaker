@@ -4,6 +4,8 @@ const { t } = useI18n()
 import { ref, computed, onMounted } from 'vue'
 import * as db from '@/firebase/db'
 import type { NotificacaoAdmin } from '@/types/notificacao'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const notificacoes = ref<NotificacaoAdmin[]>([])
 const loading = ref(true)
@@ -64,8 +66,8 @@ async function limparAntigas() {
 async function carregar() {
   try {
     notificacoes.value = await db.listarTodasNotificacoesAdmin()
-  } catch {
-    // Silently fail
+  } catch (e) {
+    console.error('Erro ao carregar notificacoes:', e)
   } finally {
     loading.value = false
   }
@@ -81,13 +83,13 @@ onMounted(carregar)
       <div class="flex gap-2 flex-wrap">
         <button
           @click="marcarTodasLidas"
-          class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200"
+          class="text-sm bg-surface-muted text-foreground-secondary px-3 py-2.5 rounded-lg hover:bg-surface-muted"
         >
           {{ t('notificacoes.marcarTodasLidas') }}
         </button>
         <button
           @click="limparAntigas"
-          class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200"
+          class="text-sm bg-surface-muted text-foreground-secondary px-3 py-2.5 rounded-lg hover:bg-surface-muted"
         >
           {{ t('notificacoes.limparAntigas') }}
         </button>
@@ -98,7 +100,7 @@ onMounted(carregar)
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
       <select
         v-model="filtroEmpresa"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm"
       >
         <option value="">{{ t('notificacoes.filtroEmpresa') }}</option>
         <option v-for="emp in empresas" :key="emp.id" :value="emp.id">
@@ -107,7 +109,7 @@ onMounted(carregar)
       </select>
       <select
         v-model="filtroLidas"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm"
       >
         <option value="todas">{{ t('notificacoes.filtroLidas') }}</option>
         <option value="lidas">{{ t('notificacoes.lidas') }}</option>
@@ -115,20 +117,15 @@ onMounted(carregar)
       </select>
     </div>
 
-    <!-- Loading -->
-    <div v-if="loading" class="animate-pulse space-y-3">
-      <div v-for="i in 5" :key="i" class="h-16 skeleton-pulse rounded-lg" />
-    </div>
+    <LoadingSkeleton :loading="loading" type="table" :rows="5">
+      <div v-if="filtradas.length === 0">
+        <EmptyState :message="t('notificacoes.nenhuma')" />
+      </div>
 
-    <!-- Empty state -->
-    <div v-else-if="filtradas.length === 0" class="text-center py-12 text-gray-400">
-      {{ t('notificacoes.nenhuma') }}
-    </div>
-
-    <!-- Desktop table -->
-    <div v-else class="bg-white rounded-xl shadow-sm border overflow-hidden">
+      <!-- Desktop table -->
+      <div class="hidden md:block bg-surface rounded-xl shadow-sm dark:shadow-none border border-border overflow-hidden">
       <table class="w-full">
-        <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+        <thead class="bg-surface-muted text-left text-sm font-medium text-foreground-muted">
           <tr>
             <th class="px-4 py-3 w-4"></th>
             <th class="px-4 py-3">{{ t('notificacoes.tipo') }}</th>
@@ -142,21 +139,40 @@ onMounted(carregar)
           <tr
             v-for="n in filtradas"
             :key="n.id"
-            class="hover:bg-gray-50 cursor-pointer"
-            :class="{ 'bg-blue-50/30': !n.lida }"
+            class="hover:bg-surface-muted cursor-pointer"
+            :class="{ 'bg-primary-soft/30': !n.lida }"
             @click="marcarLida(n)"
           >
             <td class="px-4 py-3">
-              <span v-if="!n.lida" class="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+              <span v-if="!n.lida" class="w-2 h-2 rounded-full bg-primary inline-block" />
             </td>
             <td class="px-4 py-3 text-sm">{{ tipoLabel(n.tipo) }}</td>
             <td class="px-4 py-3 text-sm font-medium">{{ n.videoTitulo }}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">{{ n.pessoaNome }}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">{{ n.empresaNome }}</td>
-            <td class="px-4 py-3 text-sm text-gray-500">{{ formatDate(n.timestamp) }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-secondary">{{ n.pessoaNome }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-secondary">{{ n.empresaNome }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-muted">{{ formatDate(n.timestamp) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Mobile cards -->
+    <div class="md:hidden space-y-3">
+      <div
+        v-for="n in filtradas"
+        :key="n.id"
+        class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-4 cursor-pointer"
+        :class="{ 'bg-primary-soft/10 border-l-4 border-l-primary': !n.lida }"
+        @click="marcarLida(n)"
+      >
+        <div class="flex items-center gap-2">
+          <span v-if="!n.lida" class="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+          <span class="text-sm font-medium text-foreground truncate">{{ n.videoTitulo }}</span>
+        </div>
+        <div class="text-sm text-foreground-muted mt-1">{{ tipoLabel(n.tipo) }} · {{ n.pessoaNome }} · {{ n.empresaNome }}</div>
+        <div class="text-xs text-muted mt-1">{{ formatDate(n.timestamp) }}</div>
+      </div>
+    </div>
+    </LoadingSkeleton>
   </div>
 </template>

@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --bg: #FAF5FF;
+    --surface: #FFFFFF;
+    --surface-muted: #F5F3FF;
+    --foreground: #1E1B4B;
+    --foreground-secondary: #4C4A6B;
+    --foreground-muted: #94A3B8;
+    --primary: #7C3AED;
+    --primary-hover: #6D28D9;
+    --primary-soft: #EDE9FE;
+    --secondary: #6366F1;
+    --border: #E0DEFA;
+    --ring: #8B5CF6;
+    --overlay: rgba(0,0,0,0.4);
+    --destructive: #DC2626;
+    --destructive-soft: #FEE2E2;
+  }
+
+  .dark {
+    --bg: #0B0617;
+    --surface: #190F2E;
+    --surface-muted: #241A3A;
+    --foreground: #EDE9FE;
+    --foreground-secondary: #C4B5FD;
+    --foreground-muted: #8B8AA0;
+    --primary: #A78BFA;
+    --primary-hover: #C4B5FD;
+    --primary-soft: #2E1F5C;
+    --secondary: #818CF8;
+    --border: #3B2D5C;
+    --ring: #A78BFA;
+    --overlay: rgba(0,0,0,0.6);
+    --destructive: #FCA5A5;
+    --destructive-soft: #3B1010;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -12,6 +50,17 @@
   }
 
   .skeleton-pulse {
-    @apply bg-gray-200 rounded-xl;
+    @apply bg-surface-muted rounded-xl;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

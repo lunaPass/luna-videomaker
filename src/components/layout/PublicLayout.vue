@@ -5,10 +5,10 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="min-h-dvh bg-gray-50">
-    <header class="bg-white border-b sticky top-0 z-10">
+  <div class="min-h-dvh bg-background">
+    <header class="bg-surface border-b border-border sticky top-0 z-10">
       <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-        <h1 class="text-lg font-bold text-gray-900">{{ t('brand.name') }}</h1>
+        <h1 class="text-lg font-bold text-foreground">{{ t('brand.name') }}</h1>
       </div>
     </header>
     <main class="max-w-4xl mx-auto px-4 py-6">

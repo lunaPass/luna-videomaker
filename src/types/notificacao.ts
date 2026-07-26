@@ -3,6 +3,7 @@ export interface Notificacao {
   statusAntigo: string
   statusNovo: string
   timestamp: number
+  lida?: boolean
 }
 
 export interface NotificacaoAdmin {

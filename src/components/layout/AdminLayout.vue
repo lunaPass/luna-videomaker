@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuth } from '@/composables/useAuth'
 import { useLocale } from '@/composables/useLocale'
+import { useTheme } from '@/composables/useTheme'
+import { useTour } from '@/composables/useTour'
 import { LOCALE_OPTIONS } from '@/locales'
 import type { Locale } from '@/locales'
+import QuickCreateModal from '@/components/admin/QuickCreateModal.vue'
 
 const { t } = useI18n()
 const { logout } = useAuth()
 const router = useRouter()
 const { current: locale, set: setLocale } = useLocale()
+const { isDark, toggle: toggleTheme } = useTheme()
 
 const navItems = [
   { label: t('nav.dashboard'), path: '/admin/dashboard', icon: 'dashboard' },
@@ -21,6 +25,8 @@ const navItems = [
   { label: t('nav.config'), path: '/admin/config', icon: 'config' },
 ]
 
+const showQuickCreate = ref(false)
+
 const icons: Record<string, string> = {
   dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
   empresas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 6h6"/><path d="M9 10h6"/><path d="M9 14h6"/></svg>',
@@ -29,6 +35,8 @@ const icons: Record<string, string> = {
   financeiro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>',
   notificacoes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
   sair: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',
 }
 
 async function handleLogout() {
@@ -36,21 +44,26 @@ async function handleLogout() {
   router.push('/login')
 }
 
-onMounted(() => {
+onMounted(async () => {
   useAuth()
+  const tour = useTour()
+  if (!tour.isCompleted()) {
+    await nextTick()
+    setTimeout(() => tour.start(), 800)
+  }
 })
 </script>
 
 <template>
-  <div class="min-h-dvh flex flex-col md:flex-row bg-gray-50">
+  <div class="min-h-dvh flex flex-col md:flex-row bg-background">
     <!-- Desktop sidebar -->
     <aside class="hidden md:flex md:flex-col bg-gray-900 text-white md:w-64 shrink-0 min-h-0 md:h-dvh">
-      <div class="p-4 text-lg font-bold border-b border-gray-700 shrink-0">
+      <div class="p-4 text-lg font-bold border-b border-gray-700 shrink-0" data-tour-step="1">
         {{ t('brand.name') }}
       </div>
 
       <div class="flex-1 flex flex-col min-h-0 overflow-y-auto">
-        <nav class="p-2 space-y-1">
+        <nav class="p-2 space-y-1" data-tour-step="2">
           <router-link
             v-for="item in navItems"
             :key="item.path"
@@ -79,6 +92,14 @@ onMounted(() => {
         </div>
 
         <button
+          @click="toggleTheme"
+          class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 text-sm font-medium"
+        >
+          <span v-html="isDark ? icons.sun : icons.moon" />
+          <span>{{ t('config.tema') }}</span>
+        </button>
+
+        <button
           @click="handleLogout"
           class="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-gray-800 transition-colors text-gray-400 text-sm font-medium"
         >
@@ -89,13 +110,21 @@ onMounted(() => {
     </aside>
 
     <!-- Mobile header -->
-    <header class="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-10">
-      <h1 class="font-bold text-gray-900">{{ t('brand.name') }}</h1>
+    <header class="md:hidden flex items-center justify-between px-4 py-3 bg-surface border-b border-border sticky top-0 z-10">
+      <h1 class="font-bold text-foreground">{{ t('brand.name') }}</h1>
       <div class="flex items-center gap-2">
+        <button
+          @click="toggleTheme"
+          class="p-2.5 text-foreground-muted hover:text-foreground-secondary rounded-lg hover:bg-surface-muted transition-colors"
+          :aria-label="isDark ? 'Modo claro' : 'Modo escuro'"
+        >
+          <span v-html="isDark ? icons.sun : icons.moon" />
+        </button>
+
         <select
           :value="locale"
           @change="setLocale(($event.target as HTMLSelectElement).value as Locale)"
-          class="border border-gray-300 rounded px-1.5 py-1 text-xs"
+          class="border border-border bg-surface text-foreground-secondary rounded px-2 py-2 text-sm"
         >
           <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">
             {{ opt.flag }} {{ opt.label }}
@@ -104,7 +133,7 @@ onMounted(() => {
 
         <button
           @click="handleLogout"
-          class="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+          class="p-2.5 text-foreground-muted hover:text-foreground-secondary rounded-lg hover:bg-surface-muted transition-colors"
           :aria-label="'Sair'"
         >
           <span v-html="icons.sair" />
@@ -121,19 +150,34 @@ onMounted(() => {
 
     <!-- Mobile bottom nav -->
     <nav
-      class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex items-center justify-around z-10"
+      class="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border flex items-center justify-around z-10"
       style="padding-bottom: env(safe-area-inset-bottom, 0px)"
     >
       <router-link
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex flex-col items-center gap-0.5 py-2 px-2 text-[10px] font-medium text-gray-500 min-w-0 flex-1 transition-colors"
-        active-class="text-blue-600"
+        class="flex flex-col items-center gap-0.5 py-2.5 px-2 text-xs font-medium text-foreground-muted min-w-0 flex-1 transition-colors"
+        active-class="text-primary"
       >
         <span v-html="icons[item.icon]" />
         <span class="truncate max-w-full leading-tight">{{ item.label }}</span>
       </router-link>
     </nav>
+
+    <!-- Floating quick-create button -->
+    <button
+      data-tour-step="7"
+      @click="showQuickCreate = true"
+      class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-primary text-white rounded-full shadow-lg hover:bg-primary-hover active:bg-primary-hover transition-colors flex items-center justify-center md:bottom-8 md:right-8" 
+      :style="{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }"
+      :aria-label="'Novo Vídeo'"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="w-7 h-7">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+
+    <QuickCreateModal :show="showQuickCreate" @close="showQuickCreate = false" />
   </div>
 </template>

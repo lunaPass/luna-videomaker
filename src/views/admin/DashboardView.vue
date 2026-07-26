@@ -7,6 +7,8 @@ import { VIDEO_STATUS_ORDER, type VideoStatus } from '@/types/video'
 import type { Video, Moeda } from '@/types/video'
 import type { Empresa } from '@/types/empresa'
 import { useCharts } from '@/composables/useCharts'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const BarComp = shallowRef<any>()
 const DoughnutComp = shallowRef<any>()
@@ -256,35 +258,12 @@ function formatDateTime(d: Date): string {
 </script>
 
 <template>
-  <!-- Skeleton shimmer -->
-  <div v-if="loading" class="animate-pulse space-y-6">
-    <div class="h-8 w-48 skeleton-pulse mb-6" />
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div v-for="i in 8" :key="i" class="h-24 skeleton-pulse" />
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <div class="h-80 skeleton-pulse" />
-      <div class="h-80 skeleton-pulse" />
-    </div>
-
-    <div class="h-80 skeleton-pulse mb-6" />
-
-    <div class="h-80 skeleton-pulse mb-6" />
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="h-64 skeleton-pulse" />
-      <div class="h-64 skeleton-pulse" />
-    </div>
-  </div>
-
-  <div v-else>
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+  <LoadingSkeleton :loading="loading" type="cards" :rows="6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6" data-tour-step="3">
       <h1 class="text-xl md:text-2xl font-bold">{{ t('dashboard.title') }}</h1>
       <select
         v-model="empresaSelecionada"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
       >
         <option value="">{{ t('dashboard.todasEmpresas') }}</option>
         <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nome }}</option>
@@ -303,19 +282,19 @@ function formatDateTime(d: Date): string {
         <p class="text-3xl font-bold">{{ card.count }}</p>
         <p class="text-sm font-medium mt-1">{{ card.label }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-gray-100 text-gray-800">
+      <div class="rounded-xl p-5 bg-surface-muted text-foreground">
         <p class="text-3xl font-bold">{{ totalVideos }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.total') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-amber-50 text-amber-800">
+      <div class="rounded-xl p-5 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300">
         <p class="text-3xl font-bold">{{ priorizadosCount }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.priorizados') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-red-50 text-red-800">
+      <div class="rounded-xl p-5 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300">
         <p class="text-3xl font-bold">{{ adsCount }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.comAds') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-indigo-50 text-indigo-800">
+      <div class="rounded-xl p-5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
         <p class="text-3xl font-bold">{{ empresas.length }}</p>
         <p class="text-sm font-medium mt-1">{{ t('dashboard.empresas') }}</p>
       </div>
@@ -323,49 +302,47 @@ function formatDateTime(d: Date): string {
 
     <!-- Pipeline + Volume Mensal -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5" data-tour-step="4">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.pipelineProducao') }}</h2>
         <div class="h-64" v-if="totalVideos > 0 && BarComp">
           <component :is="BarComp" :data="pipelineChartData" :options="pipelineChartOptions" />
         </div>
-        <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumVideo') }}</p>
+        <EmptyState v-else :message="t('dashboard.nenhumVideo')" />
       </div>
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.volumeMensal') }}</h2>
         <div class="h-64" v-if="totalVideos > 0 && BarComp">
           <component :is="BarComp" :data="volumeMensalData" :options="volumeMensalOptions" />
         </div>
-        <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumVideo') }}</p>
+        <EmptyState v-else :message="t('dashboard.nenhumVideo')" />
       </div>
     </div>
 
     <!-- Canal Distribution -->
-    <div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
+    <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5 mb-6" data-tour-step="5">
       <h2 class="text-lg font-bold mb-4">{{ t('dashboard.videosPorCanal') }}</h2>
       <div class="h-72 flex items-center justify-center" v-if="canaisData.length > 0 && DoughnutComp">
         <div class="w-72">
           <component :is="DoughnutComp" :data="canalChartData" :options="canalChartOptions" />
         </div>
       </div>
-      <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumCanal') }}</p>
+      <EmptyState v-else :message="t('dashboard.nenhumCanal')" />
     </div>
 
     <!-- Receita por Empresa -->
-    <div class="bg-white rounded-xl shadow-sm border p-5 mb-6">
+    <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5 mb-6">
       <h2 class="text-lg font-bold mb-4">{{ t('dashboard.receitaEmpresa') }}</h2>
       <div class="h-64" v-if="temReceita && BarComp">
         <component :is="BarComp" :data="receitaEmpresaData" :options="receitaEmpresaOptions" />
       </div>
-      <p v-else class="text-gray-400 text-center py-8">{{ t('dashboard.nenhumValor') }}</p>
+      <EmptyState v-else :message="t('dashboard.nenhumValor')" />
     </div>
 
     <!-- Proximos Posts + Atividade Recente -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5" data-tour-step="6">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.proximosPosts') }}</h2>
-        <div v-if="proximosPosts.length === 0" class="text-gray-400 text-center py-8">
-          {{ t('dashboard.nenhumPost') }}
-        </div>
+        <EmptyState v-if="proximosPosts.length === 0" :message="t('dashboard.nenhumPost')" />
         <ul v-else class="divide-y">
           <li
             v-for="video in proximosPosts"
@@ -374,7 +351,7 @@ function formatDateTime(d: Date): string {
           >
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium truncate">{{ video.titulo }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">
+              <p class="text-xs text-muted mt-0.5">
                 {{ video.dataPostagem ? formatDate(video.dataPostagem) : '—' }}
               </p>
             </div>
@@ -387,11 +364,9 @@ function formatDateTime(d: Date): string {
           </li>
         </ul>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('dashboard.atividadeRecente') }}</h2>
-        <div v-if="atividadeRecente.length === 0" class="text-gray-400 text-center py-8">
-          {{ t('dashboard.nenhumaAtividade') }}
-        </div>
+        <EmptyState v-if="atividadeRecente.length === 0" :message="t('dashboard.nenhumaAtividade')" />
         <ul v-else class="divide-y">
           <li
             v-for="video in atividadeRecente"
@@ -400,7 +375,7 @@ function formatDateTime(d: Date): string {
           >
             <div class="min-w-0 flex-1">
               <p class="text-sm font-medium truncate">{{ video.titulo }}</p>
-              <p class="text-xs text-gray-400 mt-0.5" :title="video.atualizadoEm.toISOString()">
+              <p class="text-xs text-muted mt-0.5" :title="video.atualizadoEm.toISOString()">
                 {{ formatDateTime(video.atualizadoEm) }}
               </p>
             </div>
@@ -414,5 +389,5 @@ function formatDateTime(d: Date): string {
         </ul>
       </div>
     </div>
-  </div>
+  </LoadingSkeleton>
 </template>

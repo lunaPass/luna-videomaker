@@ -58,7 +58,7 @@ async function exportar() {
 <template>
   <button
     @click="exportar"
-    class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200"
+    class="text-sm bg-surface-muted text-foreground-secondary px-3 py-2.5 rounded-lg hover:bg-surface-muted"
   >
     📥 {{ titulo }}
   </button>

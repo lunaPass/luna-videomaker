@@ -9,6 +9,10 @@ import { LOCALE_OPTIONS } from '@/locales'
 import type { Pessoa, PessoaFormData } from '@/types/pessoa'
 import * as db from '@/firebase/db'
 import PessoaForm from '@/components/admin/PessoaForm.vue'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal.vue'
+import { Copy, Pencil, Trash2, Video } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,8 +32,8 @@ async function carregar() {
       return
     }
     pessoas.value = await db.listarPessoas(id)
-  } catch {
-    // Silently fail
+  } catch (e) {
+    console.error('Erro ao carregar empresa:', e)
   } finally {
     loading.value = false
   }
@@ -78,25 +82,11 @@ onMounted(carregar)
 </script>
 
 <template>
-  <!-- Skeleton shimmer -->
-  <div v-if="loading" class="animate-pulse space-y-6">
-    <div class="h-4 w-32 skeleton-pulse mb-2" />
-    <div class="flex items-center gap-3 mb-6">
-      <div class="h-8 w-64 skeleton-pulse" />
-      <div class="h-8 w-16 skeleton-pulse" />
-    </div>
-    <div class="hidden md:block space-y-3">
-      <div v-for="i in 4" :key="i" class="h-12 skeleton-pulse" />
-    </div>
-    <div class="md:hidden space-y-3">
-      <div v-for="i in 3" :key="i" class="h-24 skeleton-pulse" />
-    </div>
-  </div>
-
-  <div v-else-if="empresa">
+  <LoadingSkeleton :loading="loading" type="table" :rows="4">
+  <div v-if="empresa">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <div>
-        <button @click="router.push('/admin/empresas')" class="text-sm text-blue-600 hover:text-blue-800 mb-1 block">
+        <button @click="router.push('/admin/empresas')" class="text-sm text-primary hover:text-primary-hover mb-1 block">
           &larr; {{ t('empresaDetail.voltar') }}
         </button>
         <div class="flex items-center gap-3">
@@ -104,7 +94,7 @@ onMounted(carregar)
           <select
             :value="empresa.locale"
             @change="atualizarLocale(($event.target as HTMLSelectElement).value as Locale)"
-            class="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="border border-border bg-surface text-foreground-secondary rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option v-for="opt in LOCALE_OPTIONS" :key="opt.value" :value="opt.value">
               {{ opt.flag }} {{ opt.label }}
@@ -115,13 +105,13 @@ onMounted(carregar)
       <div class="flex gap-2 flex-wrap">
         <button
           @click="copiarLinkEmpresa"
-          class="text-sm bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+          class="text-sm bg-surface-muted text-foreground-secondary px-3 py-2.5 rounded-lg hover:bg-surface-muted transition-colors"
         >
           {{ t('empresaDetail.copiarLink') }}
         </button>
         <button
           @click="showPessoaForm = true"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          class="bg-primary text-white px-4 py-2.5 rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium"
         >
           {{ t('empresaDetail.novaPessoa') }}
         </button>
@@ -129,9 +119,9 @@ onMounted(carregar)
     </div>
 
     <!-- Desktop table -->
-    <div class="hidden md:block bg-white rounded-xl shadow-sm border overflow-hidden">
+    <div class="hidden md:block bg-surface rounded-xl shadow-sm dark:shadow-none border border-border overflow-hidden">
       <table class="w-full">
-        <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+        <thead class="bg-surface-muted text-left text-sm font-medium text-foreground-muted">
           <tr>
             <th class="px-4 py-3">{{ t('empresaDetail.th.nome') }}</th>
             <th class="px-4 py-3">{{ t('empresaDetail.th.link') }}</th>
@@ -139,12 +129,12 @@ onMounted(carregar)
           </tr>
         </thead>
         <tbody class="divide-y">
-          <tr v-for="pessoa in pessoas" :key="pessoa.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">{{ pessoa.nome }}</td>
+          <tr v-for="pessoa in pessoas" :key="pessoa.id" class="hover:bg-surface-muted">
+            <td class="px-4 py-3 font-medium text-foreground">{{ pessoa.nome }}</td>
             <td class="px-4 py-3">
               <button
                 @click="copiarLinkPessoa(pessoa)"
-                class="text-sm text-blue-600 hover:text-blue-800"
+                class="text-sm text-primary hover:text-primary-hover"
               >
                 {{ t('common.copy') }}
               </button>
@@ -153,7 +143,7 @@ onMounted(carregar)
               <div class="flex items-center gap-2">
                 <button
                   @click="editingPessoa = pessoa"
-                  class="text-sm text-gray-600 hover:text-blue-600"
+                  class="text-sm text-foreground-secondary hover:text-primary"
                   :title="t('actions.editar')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
@@ -163,7 +153,7 @@ onMounted(carregar)
                 </button>
                 <button
                   @click="deletingPessoa = pessoa"
-                  class="text-sm text-gray-600 hover:text-red-600"
+                  class="text-sm text-foreground-secondary hover:text-destructive"
                   :title="t('actions.excluir')"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
@@ -183,8 +173,8 @@ onMounted(carregar)
             </td>
           </tr>
           <tr v-if="pessoas.length === 0">
-            <td colspan="3" class="px-4 py-8 text-center text-gray-400">
-              {{ t('empresaDetail.nenhumaPessoa') }}
+            <td colspan="3">
+              <EmptyState :message="t('empresaDetail.nenhumaPessoa')" />
             </td>
           </tr>
         </tbody>
@@ -196,62 +186,54 @@ onMounted(carregar)
       <div
         v-for="pessoa in pessoas"
         :key="pessoa.id"
-        class="bg-white rounded-xl shadow-sm border p-4"
+        class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-4"
       >
-        <div class="font-medium text-gray-900">{{ pessoa.nome }}</div>
-        <div class="flex gap-3 mt-3">
+        <div class="font-medium text-foreground">{{ pessoa.nome }}</div>
+        <div class="flex gap-2 mt-3">
           <button
             @click="copiarLinkPessoa(pessoa)"
-            class="text-sm text-blue-600 hover:text-blue-800"
+            class="text-primary hover:text-primary-hover min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-primary-soft transition-colors"
+            :aria-label="t('empresaDetail.copiarLink')"
           >
-            {{ t('empresaDetail.copiarLink') }}
+            <Copy class="w-4 h-4" />
           </button>
           <button
             @click="editingPessoa = pessoa"
-            class="text-sm text-gray-600 hover:text-blue-600"
+            class="text-foreground-secondary hover:text-primary min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-surface-muted transition-colors"
+            :aria-label="t('actions.editar')"
           >
-            {{ t('actions.editar') }}
+            <Pencil class="w-4 h-4" />
           </button>
           <button
             @click="deletingPessoa = pessoa"
-            class="text-sm text-gray-600 hover:text-red-600"
+            class="text-foreground-secondary hover:text-destructive min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-surface-muted transition-colors"
+            :aria-label="t('actions.excluir')"
           >
-            {{ t('actions.excluir') }}
+            <Trash2 class="w-4 h-4" />
           </button>
           <button
             @click="router.push(`/admin/empresas/${empresa.id}/pessoas/${pessoa.id}`)"
-            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            class="text-primary hover:text-primary-hover min-h-[44px] w-[44px] flex items-center justify-center rounded-lg hover:bg-primary-soft transition-colors"
+            :aria-label="t('empresaDetail.verVideos')"
           >
-            {{ t('empresaDetail.verVideos') }}
+            <Video class="w-4 h-4" />
           </button>
         </div>
       </div>
-      <p v-if="pessoas.length === 0" class="text-gray-400 text-center py-8">
-        {{ t('empresaDetail.nenhumaPessoa') }}
-      </p>
+      <EmptyState v-if="pessoas.length === 0" :message="t('empresaDetail.nenhumaPessoa')" />
     </div>
 
     <PessoaForm v-if="showPessoaForm" @submit="criarPessoa" @close="showPessoaForm = false" />
     <PessoaForm v-if="editingPessoa" :pessoa="editingPessoa" @submit="atualizarPessoa" @close="editingPessoa = null" />
 
     <!-- Delete confirmation modal -->
-    <div v-if="deletingPessoa"
-      class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      @click.self="deletingPessoa = null">
-      <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
-        <h2 class="text-lg font-bold mb-2">{{ t('empresaDetail.excluirPessoa') }}</h2>
-        <p class="text-sm text-gray-600 mb-6">
-          {{ t('empresaDetail.confirmarExclusao') }} <strong>{{ deletingPessoa.nome }}</strong>?
-        </p>
-        <div class="flex justify-end gap-3">
-          <button @click="deletingPessoa = null" class="px-4 py-2 text-gray-600 hover:text-gray-800">
-            {{ t('common.cancel') }}
-          </button>
-          <button @click="confirmarExcluirPessoa" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-            {{ t('actions.excluir') }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDeleteModal
+      :show="!!deletingPessoa"
+      :item-name="deletingPessoa?.nome || ''"
+      item-type="pessoa"
+      @confirm="confirmarExcluirPessoa"
+      @cancel="deletingPessoa = null"
+    />
   </div>
+  </LoadingSkeleton>
 </template>

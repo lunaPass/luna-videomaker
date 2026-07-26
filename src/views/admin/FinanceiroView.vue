@@ -9,6 +9,10 @@ import type { Empresa } from '@/types/empresa'
 import type { Pessoa } from '@/types/pessoa'
 import { converter } from '@/composables/useCotacao'
 import { useCharts } from '@/composables/useCharts'
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SearchInput from '@/components/ui/SearchInput.vue'
+import Pagination from '@/components/ui/Pagination.vue'
 
 const BarComp = shallowRef<any>()
 const DoughnutComp = shallowRef<any>()
@@ -194,36 +198,20 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Skeleton shimmer -->
-  <div v-if="loading" class="animate-pulse space-y-6">
-    <div class="h-8 w-48 skeleton-pulse mb-6" />
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div v-for="i in 4" :key="i" class="h-24 skeleton-pulse" />
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <div class="h-80 skeleton-pulse" />
-      <div class="h-80 skeleton-pulse" />
-    </div>
-
-    <div class="h-64 skeleton-pulse" />
-  </div>
-
-  <div v-else>
+  <LoadingSkeleton :loading="loading" type="cards" :rows="6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
       <h1 class="text-xl md:text-2xl font-bold">{{ t('financeiro.titulo') }}</h1>
       <div class="flex gap-3">
         <select
           v-model="empresaSelecionada"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">{{ t('financeiro.todasEmpresas') }}</option>
           <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nome }}</option>
         </select>
         <select
           v-model="moedaExibicao"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option v-for="m in (['BRL', 'USD', 'EUR'] as Moeda[])" :key="m" :value="m">
             {{ MOEDA_SIMBOLO[m] }} {{ m }}
@@ -234,21 +222,21 @@ onMounted(async () => {
 
     <!-- Summary cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="rounded-xl p-5 bg-green-50 text-green-800">
+      <div class="rounded-xl p-5 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300">
         <p class="text-2xl font-bold">
           {{ moedaSimbolo }} {{ fmt(totalConvertido) }}
         </p>
         <p class="text-sm font-medium mt-1">{{ t('financeiro.totalMoeda') }} ({{ moedaExibicao }})</p>
       </div>
-      <div class="rounded-xl p-5 bg-blue-50 text-blue-800">
+      <div class="rounded-xl p-5 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
         <p class="text-2xl font-bold">{{ countBrl }}</p>
         <p class="text-sm font-medium mt-1">{{ t('financeiro.videosEmBrl') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-purple-50 text-purple-800">
+      <div class="rounded-xl p-5 bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
         <p class="text-2xl font-bold">{{ countUsd }}</p>
         <p class="text-sm font-medium mt-1">{{ t('financeiro.videosEmUsd') }}</p>
       </div>
-      <div class="rounded-xl p-5 bg-indigo-50 text-indigo-800">
+      <div class="rounded-xl p-5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
         <p class="text-2xl font-bold">{{ countEur }}</p>
         <p class="text-sm font-medium mt-1">{{ t('financeiro.videosEmEur') }}</p>
       </div>
@@ -256,40 +244,30 @@ onMounted(async () => {
 
     <!-- Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('financeiro.topVideos') }} ({{ moedaExibicao }})</h2>
         <div class="h-80" v-if="topVideos.length > 0 && BarComp">
           <component :is="BarComp" :data="topVideosData" :options="topVideosOptions" />
         </div>
-        <p v-else class="text-gray-400 text-center py-8">{{ t('financeiro.nenhumVideoValor') }}</p>
+        <EmptyState v-else :message="t('financeiro.nenhumVideoValor')" />
       </div>
-      <div class="bg-white rounded-xl shadow-sm border p-5">
+      <div class="  bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-5">
         <h2 class="text-lg font-bold mb-4">{{ t('financeiro.distribuicaoMoeda') }}</h2>
         <div class="h-72 flex items-center justify-center" v-if="videosComValor.length > 0 && DoughnutComp">
           <div class="w-64">
             <component :is="DoughnutComp" :data="moedaChartData" :options="moedaChartOptions" />
           </div>
         </div>
-        <p v-else class="text-gray-400 text-center py-8">{{ t('financeiro.nenhumVideoValor') }}</p>
+        <EmptyState v-else :message="t('financeiro.nenhumVideoValor')" />
       </div>
     </div>
 
     <!-- Search + Status Filter -->
     <div class="flex flex-col sm:flex-row gap-3 mb-4">
-      <div class="relative flex-1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input
-          v-model="busca"
-          type="text"
-          :placeholder="t('videos.buscar')"
-          class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-        />
-      </div>
+      <SearchInput v-model="busca" :placeholder="t('videos.buscar')" />
       <select
         v-model="filtroStatus"
-        class="border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white"
+        class="border border-border bg-surface text-foreground-secondary rounded-lg px-3 py-2.5 text-sm"
       >
         <option value="">{{ t('videos.todosStatus') }}</option>
         <option v-for="s in statusOptions" :key="s" :value="s">
@@ -298,10 +276,10 @@ onMounted(async () => {
       </select>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+    <!-- Desktop table -->
+    <div class="hidden md:block bg-surface rounded-xl shadow-sm dark:shadow-none border border-border overflow-hidden">
       <table class="w-full">
-        <thead class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+        <thead class="bg-surface-muted text-left text-sm font-medium text-foreground-muted">
           <tr>
             <th class="px-4 py-3">{{ t('financeiro.th.video') }}</th>
             <th class="px-4 py-3">{{ t('financeiro.th.empresa') }}</th>
@@ -311,11 +289,11 @@ onMounted(async () => {
           </tr>
         </thead>
         <tbody class="divide-y">
-          <tr v-for="video in paginatedVideos" :key="video.id" class="hover:bg-gray-50">
-            <td class="px-4 py-3 font-medium">{{ video.titulo }}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">{{ nomeEmpresa(video.empresaId) }}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">{{ nomePessoa(video) }}</td>
-            <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{{ formatarValor(video) }}</td>
+          <tr v-for="video in paginatedVideos" :key="video.id" class="hover:bg-surface-muted">
+            <td class="px-4 py-3 font-medium text-foreground">{{ video.titulo }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-secondary">{{ nomeEmpresa(video.empresaId) }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-secondary">{{ nomePessoa(video) }}</td>
+            <td class="px-4 py-3 text-sm text-foreground-secondary whitespace-nowrap">{{ formatarValor(video) }}</td>
             <td class="px-4 py-3">
               <span
                 class="px-2 py-0.5 rounded text-xs font-medium"
@@ -331,48 +309,50 @@ onMounted(async () => {
             </td>
           </tr>
           <tr v-if="videosPesquisados.length === 0">
-            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
-              {{ t('financeiro.nenhumVideoValor') }}
+            <td colspan="5">
+              <EmptyState :message="t('financeiro.nenhumVideoValor')" />
             </td>
           </tr>
           <tr v-if="videosPesquisados.length > 0 && paginatedVideos.length === 0">
-            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
-              {{ t('videos.nenhumaPagina') }}
+            <td colspan="5">
+              <EmptyState :message="t('videos.nenhumaPagina')" />
             </td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-6">
-      <button
-        @click="setPage(currentPage - 1)"
-        :disabled="currentPage === 1"
-        class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+    <!-- Mobile cards -->
+    <div class="md:hidden space-y-3">
+      <div
+        v-for="video in paginatedVideos"
+        :key="video.id"
+        class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-4"
       >
-        {{ t('videos.anterior') }}
-      </button>
-      <button
-        v-for="p in totalPages"
-        :key="p"
-        @click="setPage(p)"
-        :class="[
-          'px-3 py-1.5 text-sm rounded-lg border transition-colors min-w-[36px]',
-          p === currentPage
-            ? 'bg-blue-600 text-white border-blue-600'
-            : 'border-gray-300 hover:bg-gray-50'
-        ]"
-      >
-        {{ p }}
-      </button>
-      <button
-        @click="setPage(currentPage + 1)"
-        :disabled="currentPage === totalPages"
-        class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
-      >
-        {{ t('videos.proximo') }}
-      </button>
+        <div class="font-medium text-foreground">{{ video.titulo }}</div>
+        <div class="text-sm text-foreground-muted mt-0.5">{{ nomeEmpresa(video.empresaId) }} · {{ nomePessoa(video) }}</div>
+        <div class="flex items-center justify-between mt-2">
+          <span class="text-sm font-semibold text-foreground">{{ formatarValor(video) }}</span>
+          <span
+            class="px-2 py-0.5 rounded text-xs font-medium"
+            :class="{
+              'bg-yellow-100 text-yellow-800': video.status === 'gravado',
+              'bg-blue-100 text-blue-800': video.status === 'editando',
+              'bg-purple-100 text-purple-800': video.status === 'revisao',
+              'bg-green-100 text-green-800': video.status === 'postado',
+            }"
+          >
+            {{ t('status.' + video.status) }}
+          </span>
+        </div>
+      </div>
+      <div v-if="videosPesquisados.length === 0 || (videosPesquisados.length > 0 && paginatedVideos.length === 0)">
+        <EmptyState
+          :message="videosPesquisados.length === 0 ? t('financeiro.nenhumVideoValor') : t('videos.nenhumaPagina')"
+        />
+      </div>
     </div>
-  </div>
+
+    <Pagination :current-page="currentPage" :total-pages="totalPages" @page-change="setPage" />
+  </LoadingSkeleton>
 </template>

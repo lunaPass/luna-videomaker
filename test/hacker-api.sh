@@ -4,7 +4,11 @@ set -euo pipefail
 API_KEY="AIzaSyCJ8eQmDW-Yn7uibak9FDtSeI9l5pAD_60"
 PROJECT_ID="video-maker-manager-9a47c"
 ADMIN_EMAIL="lunaheloisaa82@gmail.com"
-ADMIN_PASS="LunaCanto@2026"
+ADMIN_PASS="${ADMIN_PASS:-}"
+if [ -z "$ADMIN_PASS" ]; then
+  echo "ERRO: ADMIN_PASS nao definida. Execute: ADMIN_PASS='senha' $0"
+  exit 1
+fi
 
 FAIL=0
 GREEN='\033[0;32m'

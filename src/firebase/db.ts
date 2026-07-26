@@ -1,7 +1,6 @@
 import { db } from './init'
 import {
   collection,
-  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -424,9 +423,13 @@ export async function listarNotificacoes(
   const snap = await getDocs(
     collection(db!, 'empresas', empresaId, 'pessoas', pessoaId, 'notificacoes')
   )
-  const lista = snap.docs.map((d) => d.data() as Notificacao)
+  const lista = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() } as Notificacao & { id: string }))
+    .filter((n) => !n.lida)
   const batch = writeBatch(db!)
-  snap.docs.forEach((d) => batch.delete(d.ref))
+  snap.docs
+    .filter((d) => !d.data().lida)
+    .forEach((d) => batch.update(d.ref, { lida: true }))
   await batch.commit()
   return lista
 }
@@ -454,8 +457,15 @@ export async function listarNotificacoesAdmin(
 }
 
 export async function listarTodasNotificacoesAdmin(): Promise<NotificacaoAdmin[]> {
-  const grupos = await getDocs(query(collectionGroup(db!, 'notificacoesAdmin')))
-  return grupos.docs.map((d) => ({ id: d.id, ...d.data() } as NotificacaoAdmin))
+  const empresasSnap = await getDocs(collection(db!, 'empresas'))
+  const results: NotificacaoAdmin[] = []
+  for (const empresaDoc of empresasSnap.docs) {
+    const snap = await getDocs(collection(db!, 'empresas', empresaDoc.id, 'notificacoesAdmin'))
+    snap.docs.forEach((d) => {
+      results.push({ id: d.id, ...d.data() } as NotificacaoAdmin)
+    })
+  }
+  return results
 }
 
 export async function marcarNotificacaoAdminLida(
