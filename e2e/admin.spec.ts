@@ -352,14 +352,13 @@ test.describe('Admin', () => {
     await expect(page.getByRole('heading', { name: 'Todos os Vídeos' })).toBeVisible()
 
     // With 28+ videos and pageSize=20, should have 2 pages
-    const pagination = page.locator('.flex.items-center.justify-center.gap-2.mt-6')
-    await expect(pagination.getByText('Anterior')).toBeVisible()
-    await expect(pagination.getByText('Próximo')).toBeVisible()
-    await expect(pagination.getByRole('button', { name: '1', exact: true })).toBeVisible()
-    await expect(pagination.getByRole('button', { name: '2', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Anterior' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Próximo' })).toBeVisible()
+    await expect(page.getByRole('button', { name: '1', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: '2', exact: true })).toBeVisible()
 
     // Page 1 - Anterior should be disabled
-    await expect(pagination.getByText('Anterior')).toBeDisabled()
+    await expect(page.getByRole('button', { name: 'Anterior' })).toBeDisabled()
   })
 
   test('paginacao avanca para pagina 2', async ({ page }) => {
@@ -370,8 +369,7 @@ test.describe('Admin', () => {
     await expect(page.getByText('Review Novo Smartphone').first()).toBeVisible()
 
     // Go to page 2
-    const pagination = page.locator('.flex.items-center.justify-center.gap-2.mt-6')
-    await pagination.getByRole('button', { name: '2', exact: true }).click()
+    await page.getByRole('button', { name: '2', exact: true }).click()
     await page.waitForTimeout(300)
 
     // Page 1 videos should be gone, page 2 videos visible
@@ -454,7 +452,8 @@ test.describe('Admin', () => {
     // Verify the value is persisted — go to financeiro to check
     await page.goto(`${BASE}/admin/financeiro`)
     await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
-    await expect(page.getByText('Setup Gamer 2025').first()).toBeVisible()
+    const row = page.locator('tr').filter({ hasText: 'Setup Gamer 2025' })
+    await expect(row.getByText('R$ 777,00').first()).toBeVisible()
   })
 
   test('admin cria video e contratante ve na pagina publica', async ({ page }) => {
@@ -485,5 +484,115 @@ test.describe('Admin', () => {
     await priorizarPublicBtn.click()
     // Star should change to "Remover prioridade" (optimistic update)
     await expect(page.locator('button[title="Remover prioridade"]').first()).toBeVisible({ timeout: 5000 })
+  })
+
+  test('cria video rapido via FAB flutuante', async ({ page }) => {
+    await page.goto(`${BASE}/admin/dashboard`)
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+
+    // Click FAB button
+    await page.getByLabel('Novo Vídeo').click()
+    await expect(page.getByText('Novo Vídeo Rápido')).toBeVisible()
+
+    // Select empresa
+    await page.locator('select').first().selectOption('empresa-1')
+    // Select pessoa
+    await page.locator('select').nth(1).selectOption('pessoa-1')
+    // Fill title
+    await page.getByPlaceholder('Título do vídeo').fill('Video FAB Teste')
+
+    // Submit
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    // Should show success message
+    await expect(page.getByText('Vídeo criado com sucesso!')).toBeVisible()
+
+    // Click to verify on pessoa page
+    await page.getByText('Ver vídeos da pessoa').click()
+    await expect(page.getByRole('heading', { name: 'Ana Silva' })).toBeVisible()
+    await expect(page.getByText('Video FAB Teste').first()).toBeVisible()
+  })
+
+  test('quick create modal fecha com cancelar', async ({ page }) => {
+    await page.goto(`${BASE}/admin/dashboard`)
+    await page.getByLabel('Novo Vídeo').click()
+    await expect(page.getByText('Novo Vídeo Rápido')).toBeVisible()
+
+    await page.getByText('Cancelar').click()
+    await expect(page.getByText('Novo Vídeo Rápido')).toHaveCount(0)
+  })
+
+  test('edita pessoa via formulario na empresa', async ({ page }) => {
+    await page.goto(`${BASE}/admin/empresas/empresa-1`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+
+    // Find edit button for a pessoa (pencil icon, title="Editar")
+    const editBtn = page.getByTitle('Editar').first()
+    await editBtn.click()
+
+    // Modal with input pre-filled
+    const nameInput = page.getByPlaceholder('Ex: João')
+    await expect(nameInput).toBeVisible()
+    // Append " Editado" to the current name
+    const currentName = await nameInput.inputValue()
+    await nameInput.fill(currentName + ' Editado')
+
+    // Submit
+    await page.getByRole('button', { name: 'Salvar' }).click()
+
+    // The edited name should appear in the table
+    await expect(page.getByText(currentName + ' Editado').first()).toBeVisible({ timeout: 10000 })
+  })
+
+  test('exclui pessoa com confirmacao modal na empresa', async ({ page }) => {
+    await page.goto(`${BASE}/admin/empresas/empresa-1`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+
+    // Get the last pessoa name (will be the one we edited in the previous test)
+    const pessoaRows = page.locator('tbody tr')
+    const pessoaCount = await pessoaRows.count()
+    expect(pessoaCount).toBeGreaterThan(1)
+
+    // Click delete on the last pessoa
+    const deleteBtns = page.getByTitle('Excluir')
+    const lastDeleteBtn = deleteBtns.nth(pessoaCount - 1)
+    const rowText = await pessoaRows.nth(pessoaCount - 1).innerText()
+    const pessoaName = rowText.split('\t')[0].trim()
+
+    await lastDeleteBtn.click()
+
+    // Confirm delete modal should appear
+    await expect(page.getByText('Tem certeza que deseja excluir')).toBeVisible()
+    await expect(page.getByText(pessoaName).first()).toBeVisible()
+
+    // Cancel first, then delete
+    await page.getByText('Cancelar').click()
+    await page.waitForTimeout(300)
+
+    // Now actually delete
+    await deleteBtns.nth(pessoaCount - 1).click()
+    await expect(page.getByText('Tem certeza que deseja excluir')).toBeVisible()
+    await page.getByText('Excluir', { exact: true }).click()
+
+    // Pessoa should be removed
+    await expect(page.getByText(pessoaName)).toHaveCount(0)
+  })
+
+  test('altera locale da empresa no detalhe', async ({ page }) => {
+    await page.goto(`${BASE}/admin/empresas/empresa-1`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+
+    // Find the locale select next to the empresa name
+    const localeSelect = page.locator('select').first()
+    await localeSelect.selectOption('en')
+
+    // Locale should switch — verify by checking nav text changes
+    await page.waitForTimeout(500)
+
+    // Go to empresas page to verify locale persisted
+    await page.goto(`${BASE}/admin/empresas/empresa-1`)
+    await expect(page.getByRole('heading', { name: 'Luna Filmes' })).toBeVisible()
+    const localeValue = await page.locator('select').first().inputValue()
+    expect(localeValue).toBe('en')
   })
 })

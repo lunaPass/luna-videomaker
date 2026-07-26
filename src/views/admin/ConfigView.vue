@@ -15,6 +15,7 @@ const eurToBrl = ref(5.5)
 const cotacaoMsg = ref('')
 
 const { atualizar, loading: cotacaoLoading } = useCotacao()
+const { restart } = useTour()
 
 async function carregar() {
   const config = await db.getConfig()
@@ -159,7 +160,7 @@ onMounted(carregar)
     <div class="bg-surface rounded-xl shadow-sm dark:shadow-none border border-border p-6 max-w-lg mt-6">
       <h2 class="text-lg font-semibold mb-4">{{ t('tour.heading') }}</h2>
       <button
-        @click="useTour().reset(); useTour().start()"
+        @click="restart()"
         class="bg-primary text-white px-4 py-3 rounded-lg hover:bg-primary-hover"
       >
         {{ t('tour.reiniciar') }}

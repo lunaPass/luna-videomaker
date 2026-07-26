@@ -23,6 +23,9 @@ test.describe('Acesso indevido (hacker)', () => {
       '/admin/empresas/qualquer-id',
       '/admin/empresas/x/pessoas/y',
       '/admin/videos',
+      '/admin/financeiro',
+      '/admin/relatorios',
+      '/admin/notificacoes',
       '/admin/config',
     ]
     for (const rota of rotas) {

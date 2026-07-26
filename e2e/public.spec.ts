@@ -169,10 +169,7 @@ test.describe('Páginas públicas', () => {
 
   test('ordenacao A-Z funciona', async ({ page }) => {
     await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
-    const sortSelect = page.locator('select').first()
-
-    // Precisamos encontrar o select de ordenação (o segundo select na página)
-    // O primeiro select geralmente é o de filtro de pessoa
+    const sortSelect = page.getByRole('combobox').filter({ has: page.locator('option[value="az"]') })
     await sortSelect.selectOption('az')
 
     // O primeiro vídeo em ordem A-Z deve ser "Comparativo iPhone vs Android"
@@ -255,8 +252,7 @@ test.describe('Páginas públicas', () => {
 
   test('ordenacao Z-A funciona', async ({ page }) => {
     await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
-    const sortSelect = page.locator('select').first()
-
+    const sortSelect = page.getByRole('combobox').filter({ has: page.locator('option[value="za"]') })
     await sortSelect.selectOption('za')
 
     // O primeiro video em ordem Z-A deve ser "Vlog Trabalhando Home Office" (começa com V)
@@ -266,8 +262,7 @@ test.describe('Páginas públicas', () => {
 
   test('ordenacao Data Down funciona', async ({ page }) => {
     await page.goto(`${BASE}/v/luna-filmes?token=${TOKENS.empresa['luna-filmes']}`)
-    const sortSelect = page.locator('select').first()
-
+    const sortSelect = page.getByRole('combobox').filter({ has: page.locator('option[value="data-desc"]') })
     await sortSelect.selectOption('data-desc')
 
     // O primeiro video deve ser "Entrevista com Especialista" (futuro +14d, maior dataPostagem)

@@ -22,7 +22,8 @@ test.describe('Financeiro', () => {
     // Total card
     await expect(page.getByText('Total (BRL)')).toBeVisible()
     // Should show a numeric value with R$ symbol
-    await expect(page.locator('.bg-green-50').getByText('R$')).toBeVisible()
+    const totalCard = page.locator('div').filter({ hasText: 'Total (BRL)' }).first()
+    await expect(totalCard.getByText('R$')).toBeVisible()
 
     // Currency count cards
     await expect(page.getByText('Vídeos em BRL')).toBeVisible()
@@ -123,6 +124,45 @@ test.describe('Financeiro', () => {
     // Should show status badges in table (use span to avoid matching hidden <option>)
     await expect(page.locator('td span').filter({ hasText: 'Postado' }).first()).toBeVisible()
     await expect(page.locator('td span').filter({ hasText: 'Editando' }).first()).toBeVisible()
+  })
+
+  test('financeiro filtra por status', async ({ page }) => {
+    await page.goto(`${BASE}/admin/financeiro`)
+    await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
+
+    // Select Postado status filter
+    const statusSelect = page.locator('select').filter({ has: page.locator('option[value="postado"]') })
+    await statusSelect.selectOption('postado')
+
+    await page.waitForTimeout(300)
+
+    // Should show Postado videos
+    await expect(page.locator('td span').filter({ hasText: 'Postado' }).first()).toBeVisible()
+    // Should NOT show Gravado videos
+    await expect(page.getByText('Setup Gamer 2025')).toHaveCount(0)
+  })
+
+  test('financeiro busca por texto filtra resultados', async ({ page }) => {
+    await page.goto(`${BASE}/admin/financeiro`)
+    await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
+
+    await page.getByPlaceholder('Buscar por título, empresa, pessoa ou observações...').fill('iPhone')
+
+    await page.waitForTimeout(500)
+
+    await expect(page.getByText('Comparativo iPhone').first()).toBeVisible()
+    await expect(page.getByText('Review Novo Smartphone')).toHaveCount(0)
+  })
+
+  test('financeiro busca sem resultados mostra empty state', async ({ page }) => {
+    await page.goto(`${BASE}/admin/financeiro`)
+    await expect(page.getByRole('heading', { name: 'Financeiro' })).toBeVisible()
+
+    await page.getByPlaceholder('Buscar por título, empresa, pessoa ou observações...').fill('zzzzzz')
+
+    await page.waitForTimeout(500)
+
+    await expect(page.getByText('Nenhum vídeo com valor registrado')).toBeVisible()
   })
 
 })
